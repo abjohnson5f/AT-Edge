@@ -150,30 +150,28 @@ function generateMockOverlays(candles: CandlestickData<Time>[], alias: string) {
 
 // ── Data Source Tracking ──
 
-type SeriesName = 'candles' | 'volume' | 'sma' | 'conversion' | 'demand';
-
 interface DataSources {
   candles: 'live' | 'simulated';
   volume: 'live' | 'simulated';
-  sma: 'live' | 'simulated' | 'insufficient';
-  conversion: 'live' | 'simulated' | 'insufficient';
-  demand: 'live' | 'simulated' | 'insufficient';
+  sma: 'live' | 'simulated';
+  conversion: 'live' | 'simulated';
+  demand: 'live' | 'simulated';
 }
 
 // ── Chart Data Hook ──
 
-function useChartData(alias: string, avgPriceCents: number, timeframe: string) {
+function useChartData(alias: string, avgPriceCents: number) {
   const [apiData, setApiData] = useState<ChartDataResponse | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Fetch from API
+  // Always fetch ALL data from the API (timeframe is handled via visible range)
   useEffect(() => {
     if (USE_MOCK) return;
 
     let cancelled = false;
     setLoading(true);
 
-    fetch(`${API_BASE}/chart-data/${alias}?tf=${timeframe}`)
+    fetch(`${API_BASE}/chart-data/${alias}?tf=ALL`)
       .then(res => res.json())
       .then(data => {
         if (!cancelled && data.status === 'ok') {
@@ -190,38 +188,36 @@ function useChartData(alias: string, avgPriceCents: number, timeframe: string) {
       });
 
     return () => { cancelled = true; };
-  }, [alias, timeframe]);
+  }, [alias]);
 
-  // Mock data (memoized, deterministic)
+  // Mock data (memoized, deterministic) — full 365 days always
   const mockCandles = useMemo(
     () => generateMockCandlestickData(avgPriceCents, 365, alias),
     [alias, avgPriceCents],
   );
 
-  const slicedMockCandles = useMemo(() => {
-    const days = TIMEFRAME_DAYS[timeframe] ?? 180;
-    if (days >= mockCandles.length) return mockCandles;
-    return mockCandles.slice(-days);
-  }, [mockCandles, timeframe]);
-
   const mockOverlays = useMemo(
-    () => generateMockOverlays(slicedMockCandles, alias),
-    [slicedMockCandles, alias],
+    () => generateMockOverlays(mockCandles, alias),
+    [mockCandles, alias],
   );
 
-  // Per-series: use API data if available for that series, else fall back to mock
-  const hasLiveCandles = apiData != null && apiData.candles.length > 0;
-  const hasLiveVolume = apiData != null && apiData.volume.length > 0;
+  // Minimum candles needed before we show live data instead of simulated.
+  // With only 1-4 candles the chart is useless — use the 365-day simulated set
+  // and show PARTIAL DATA badge. Once the collector has run for 5+ days, live wins.
+  const MIN_LIVE_CANDLES = 5;
+
+  const hasLiveCandles = apiData != null && apiData.candles.length >= MIN_LIVE_CANDLES;
+  const hasLiveVolume = hasLiveCandles && apiData!.volume.length >= MIN_LIVE_CANDLES;
   const hasLiveSMA = apiData != null && apiData.sma.length > 0;
-  const hasLiveConversion = apiData != null && apiData.conversion.length > 0;
-  const hasLiveDemand = apiData != null && apiData.demand.length > 0;
+  const hasLiveConversion = apiData != null && apiData.conversion.length >= 2;
+  const hasLiveDemand = apiData != null && apiData.demand.length >= 2;
 
   const sources: DataSources = {
     candles: hasLiveCandles ? 'live' : 'simulated',
     volume: hasLiveVolume ? 'live' : 'simulated',
-    sma: hasLiveSMA ? 'live' : (hasLiveCandles ? 'insufficient' : 'simulated'),
-    conversion: hasLiveConversion ? 'live' : (apiData != null ? 'insufficient' : 'simulated'),
-    demand: hasLiveDemand ? 'live' : (apiData != null ? 'insufficient' : 'simulated'),
+    sma: hasLiveSMA ? 'live' : 'simulated',
+    conversion: hasLiveConversion ? 'live' : 'simulated',
+    demand: hasLiveDemand ? 'live' : 'simulated',
   };
 
   const allLive = Object.values(sources).every(s => s === 'live');
@@ -235,7 +231,7 @@ function useChartData(alias: string, avgPriceCents: number, timeframe: string) {
     loading,
     candles: hasLiveCandles
       ? apiData!.candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close }))
-      : slicedMockCandles,
+      : mockCandles,
     volume: hasLiveVolume
       ? apiData!.volume.map(v => ({ time: v.time as Time, value: v.value, color: v.color }))
       : mockOverlays.volume.map(v => ({ time: v.time as Time, value: v.value, color: v.color })),
@@ -266,7 +262,8 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
   const [activeTimeframe, setActiveTimeframe] = useState('6M');
   const [activeTool, setActiveTool] = useState('cursor');
 
-  const chartData = useChartData(restaurant.alias, restaurant.avgPriceCents, activeTimeframe);
+  const chartData = useChartData(restaurant.alias, restaurant.avgPriceCents);
+  const initialFitDone = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -276,6 +273,8 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
       chartRef.current = null;
       seriesRef.current = {};
     }
+
+    initialFitDone.current = false;
 
     const chart = createChart(containerRef.current, {
       layout: {
@@ -363,6 +362,10 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
         lineStyle: 0,
         crosshairMarkerVisible: false,
         priceScaleId: 'conversion',
+        priceFormat: {
+          type: 'custom',
+          formatter: (price: number) => `${(price * 100).toFixed(1)}%`,
+        },
         visible: activeIndicators.has('conversion'),
       });
       chart.priceScale('conversion').applyOptions({
@@ -389,7 +392,19 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
       seriesRef.current.demand = demSeries;
     }
 
-    chart.timeScale().fitContent();
+    // Initial fit: apply the default timeframe visible range, or fitContent for ALL
+    if (activeTimeframe === 'ALL') {
+      chart.timeScale().fitContent();
+    } else {
+      const days = TIMEFRAME_DAYS[activeTimeframe] ?? 180;
+      const today = new Date();
+      const from = new Date(today);
+      from.setDate(from.getDate() - days);
+      const toStr = today.toISOString().slice(0, 10);
+      const fromStr = from.toISOString().slice(0, 10);
+      chart.timeScale().setVisibleRange({ from: fromStr as Time, to: toStr as Time });
+    }
+    initialFitDone.current = true;
 
     // Responsive resize
     const ro = new ResizeObserver(() => {
@@ -409,6 +424,23 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
       seriesRef.current = {};
     };
   }, [chartData, activeTool]);
+
+  // Timeframe buttons set visible range without re-fetching data
+  useEffect(() => {
+    if (!chartRef.current || !initialFitDone.current) return;
+
+    if (activeTimeframe === 'ALL') {
+      chartRef.current.timeScale().fitContent();
+    } else {
+      const days = TIMEFRAME_DAYS[activeTimeframe] ?? 180;
+      const today = new Date();
+      const from = new Date(today);
+      from.setDate(from.getDate() - days);
+      const toStr = today.toISOString().slice(0, 10);
+      const fromStr = from.toISOString().slice(0, 10);
+      chartRef.current.timeScale().setVisibleRange({ from: fromStr as Time, to: toStr as Time });
+    }
+  }, [activeTimeframe]);
 
   // Toggle overlay visibility without full chart rebuild
   useEffect(() => {
@@ -491,7 +523,7 @@ export function PriceChart({ restaurant, activeIndicators, showVolume }: PriceCh
                 .map(([name, src]) => (
                   <span key={name} className="chart-data-banner-item">
                     <span className="chart-data-banner-series">{name}</span>
-                    {src === 'insufficient' ? ' (needs more history)' : ' (simulated)'}
+                    {' (simulated)'}
                   </span>
                 ))
               }

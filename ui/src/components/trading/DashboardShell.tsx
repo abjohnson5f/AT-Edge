@@ -278,6 +278,8 @@ export function DashboardShell() {
         tickerRestaurants={restaurants.slice(0, 3)}
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
+        allRestaurants={restaurants}
+        onSelect={handleSelectRestaurant}
       />
       <main className="main-content">
         <RestaurantInfoBar
