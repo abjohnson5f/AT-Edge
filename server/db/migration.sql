@@ -208,6 +208,34 @@ CREATE INDEX IF NOT EXISTS idx_ledger_type ON account_ledger(entry_type);
 CREATE INDEX IF NOT EXISTS idx_ledger_recorded ON account_ledger(recorded_at DESC);
 
 -- ============================================================
+-- RESTAURANT PROFILES CACHE (Apify + Claude enrichment)
+-- Caches scraped web data + AI analysis per restaurant.
+-- TTL-based: re-enriched after 7 days.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS restaurant_profiles (
+  id              SERIAL PRIMARY KEY,
+  location_alias  TEXT NOT NULL UNIQUE,           -- AT alias (e.g. 'carbone-new-york')
+  restaurant_name TEXT NOT NULL,
+  scraped_data    JSONB NOT NULL DEFAULT '{}',    -- Raw Apify results (ratings, reviews, address, hours, etc.)
+  ai_analysis     TEXT,                           -- Claude-generated intelligence report
+  cuisine_type    TEXT,
+  address         TEXT,
+  phone           TEXT,
+  website         TEXT,
+  rating          REAL,                           -- Aggregate rating (Google/Yelp)
+  review_count    INTEGER,
+  price_level     TEXT,                           -- '$' | '$$' | '$$$' | '$$$$'
+  photo_urls      JSONB DEFAULT '[]',             -- Array of image URLs
+  highlights      JSONB DEFAULT '[]',             -- AI-extracted key highlights
+  enriched_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_restaurant_profiles_alias ON restaurant_profiles(location_alias);
+CREATE INDEX IF NOT EXISTS idx_restaurant_profiles_enriched ON restaurant_profiles(enriched_at);
+
+-- ============================================================
 -- QMD: SEMANTIC SEARCH LAYER (memory_embeddings)
 -- pgvector embeddings across all 3 tiers for retrieval
 -- ============================================================
@@ -248,6 +276,21 @@ SELECT
   l.sold_at
 FROM listings l
 WHERE l.status IN ('sold', 'active', 'expired');
+
+-- Daily OHLC aggregation from trades (for chart rendering)
+CREATE OR REPLACE VIEW daily_ohlc AS
+SELECT
+  location_alias,
+  DATE(trade_date) AS trade_day,
+  (ARRAY_AGG(price_cents ORDER BY trade_date ASC))[1] AS open_cents,
+  MAX(price_cents) AS high_cents,
+  MIN(price_cents) AS low_cents,
+  (ARRAY_AGG(price_cents ORDER BY trade_date DESC))[1] AS close_cents,
+  COUNT(*) AS volume
+FROM trades
+WHERE trade_date IS NOT NULL
+GROUP BY location_alias, DATE(trade_date)
+ORDER BY location_alias, trade_day;
 
 -- Location intelligence rollup
 CREATE OR REPLACE VIEW location_intelligence AS

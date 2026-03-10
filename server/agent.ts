@@ -19,7 +19,7 @@ const AT_TOOLS: Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        pageSize: { type: "number", description: "Results per page (default 50)" },
+        pageSize: { type: "number", description: "Results per page (default 25)" },
       },
       required: [],
     },
@@ -31,7 +31,7 @@ const AT_TOOLS: Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        pageSize: { type: "number", description: "Results per page (default 50)" },
+        pageSize: { type: "number", description: "Results per page (default 25)" },
       },
       required: [],
     },
@@ -43,7 +43,7 @@ const AT_TOOLS: Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        pageSize: { type: "number", description: "Results per page (default 50)" },
+        pageSize: { type: "number", description: "Results per page (default 25)" },
       },
       required: [],
     },
@@ -55,7 +55,7 @@ const AT_TOOLS: Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        pageSize: { type: "number", description: "Results per page (default 50)" },
+        pageSize: { type: "number", description: "Results per page (default 25)" },
       },
       required: [],
     },
@@ -66,7 +66,7 @@ const AT_TOOLS: Tool[] = [
     input_schema: {
       type: "object" as const,
       properties: {
-        pageSize: { type: "number", description: "Results per page (default 50)" },
+        pageSize: { type: "number", description: "Results per page (default 25)" },
       },
       required: [],
     },
@@ -206,31 +206,31 @@ export async function executeTool(
       case "at_get_highest_converting":
         return JSON.stringify(
           await api.marketdata.getHighestConvertingLocations({
-            pageSize: (input.pageSize as number) ?? 50,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_get_most_bids_least_asks":
         return JSON.stringify(
           await api.marketdata.getMostBidsLeastAsks({
-            pageSize: (input.pageSize as number) ?? 50,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_get_underserved":
         return JSON.stringify(
           await api.marketdata.getMostUnderservedLocations({
-            pageSize: (input.pageSize as number) ?? 50,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_get_most_viewed_least_listings":
         return JSON.stringify(
           await api.marketdata.getMostViewedLeastListings({
-            pageSize: (input.pageSize as number) ?? 50,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_get_toplist":
         return JSON.stringify(
           await api.marketdata.getToplist({
-            pageSize: (input.pageSize as number) ?? 50,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_get_location_metrics":
@@ -280,7 +280,7 @@ export async function executeTool(
         return JSON.stringify(
           await api.bid.getList({
             locationAlias: input.locationAlias as string,
-            pageSize: (input.pageSize as number) ?? 100,
+            pageSize: (input.pageSize as number) ?? 25,
           })
         );
       case "at_parse_reservation_email": {

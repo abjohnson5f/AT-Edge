@@ -13,6 +13,7 @@
     "import": "tsx src/index.ts import",
     "portfolio": "tsx src/index.ts portfolio",
     "price-check": "tsx src/index.ts price-check",
+    "backfill": "tsx server/backfill.ts",
     "db:migrate": "tsx -e \"import{runMigration}from'./server/db/client.js';import'dotenv/config';runMigration().then(()=>{console.log('Migration complete');process.exit(0)}).catch(e=>{console.error(e);process.exit(1)})\""
   },
   "dependencies": {

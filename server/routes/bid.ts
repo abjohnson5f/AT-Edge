@@ -9,7 +9,7 @@ bidRoutes.get("/list", async (req, res) => {
     const api = new ATAPI();
     const result = await api.bid.getList({
       locationAlias: req.query.locationAlias as string,
-      pageSize: Number(req.query.pageSize ?? 100),
+      pageSize: Number(req.query.pageSize ?? 25),
     });
     res.json(result);
   } catch (err) {

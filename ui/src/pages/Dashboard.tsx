@@ -6,8 +6,7 @@ import { getScoutReport } from "../api/marketdata";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
 import { formatCurrency } from "../lib/utils";
 import { Badge } from "../components/ui/badge";
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
-import { ArrowUpRight, ArrowDownRight, Minus, Activity, PlusCircle, DollarSign, Mail } from "lucide-react";
+import { Minus, Activity, DollarSign, Mail } from "lucide-react";
 
 export function Dashboard() {
   const { data: accountsData } = useQuery({ queryKey: ["accounts"], queryFn: getAccounts });
@@ -18,22 +17,12 @@ export function Dashboard() {
   const balance = accountsData?.Payload?.[0]?.balance || 0;
   const activeListingsCount = listingsData?.Payload?.length || 0;
   const openBidsCount = bidsData?.Payload?.length || 0;
-  const pendingImports = 3; // Mocked
+  const pendingImports = 0; // No import tracking yet
+
+  const listings = listingsData?.Payload || [];
+  const totalListingValue = listings.reduce((sum, l) => sum + (l.priceAmountInSmallestUnit || 0), 0);
 
   const topOpportunities = scoutData?.Payload?.rawData.toplist.slice(0, 10) || [];
-
-  // Mock portfolio performance data
-  const performanceData = Array.from({ length: 30 }).map((_, i) => ({
-    date: new Date(Date.now() - (29 - i) * 86400000).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    value: 10000 + Math.random() * 5000 + (i * 100),
-  }));
-
-  const recentActivity = [
-    { id: 1, type: "listing", icon: PlusCircle, text: "Created listing for Carbone (Table for 2)", time: "10m ago" },
-    { id: 2, type: "price", icon: DollarSign, text: "Repriced Nobu Malibu to $85.00", time: "1h ago" },
-    { id: 3, type: "bid", icon: Activity, text: "Filled bid for The French Laundry at $450.00", time: "3h ago" },
-    { id: 4, type: "email", icon: Mail, text: "Imported 2 reservations from Gmail", time: "5h ago" },
-  ];
 
   return (
     <div className="flex flex-col gap-6">
@@ -48,7 +37,6 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(balance)}</div>
-            <p className="text-xs text-zinc-500">+2.1% from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -58,7 +46,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeListingsCount}</div>
-            <p className="text-xs text-zinc-500">Total value: {formatCurrency(150000)}</p>
+            <p className="text-xs text-zinc-500">Total value: {totalListingValue > 0 ? formatCurrency(totalListingValue) : "\u2014"}</p>
           </CardContent>
         </Card>
         <Card>
@@ -95,7 +83,7 @@ export function Dashboard() {
               <table className="w-full text-sm text-left">
                 <thead className="text-xs text-zinc-400 uppercase bg-zinc-900/50">
                   <tr>
-                    <th className="px-4 py-3 rounded-tl-md">Location</th>
+                    <th className="px-4 py-3 rounded-tl-md">Restaurant</th>
                     <th className="px-4 py-3">City</th>
                     <th className="px-4 py-3">Signal</th>
                     <th className="px-4 py-3">Score</th>
@@ -108,15 +96,13 @@ export function Dashboard() {
                       <td className="px-4 py-3 font-medium">{opp.locationName}</td>
                       <td className="px-4 py-3 text-zinc-400">{opp.city}</td>
                       <td className="px-4 py-3">
-                        {i === 0 ? <Badge variant="warning">Underserved</Badge> : 
-                         i === 1 ? <Badge variant="success">High Converting</Badge> : 
-                         <Badge variant="secondary">Bid Imbalance</Badge>}
+                        {(opp.conversionRate && opp.conversionRate > 0) ? <Badge variant="success">High Converting</Badge> :
+                         (opp.bidCount && opp.listingCount && opp.bidCount > opp.listingCount) ? <Badge variant="warning">Bid Imbalance</Badge> :
+                         <Badge variant="secondary">Opportunity</Badge>}
                       </td>
-                      <td className="px-4 py-3">{opp.score}</td>
+                      <td className="px-4 py-3">{opp.score ?? "\u2014"}</td>
                       <td className="px-4 py-3">
-                        {i % 3 === 0 ? <ArrowUpRight className="h-4 w-4 text-green-500" /> : 
-                         i % 3 === 1 ? <Minus className="h-4 w-4 text-zinc-500" /> : 
-                         <ArrowDownRight className="h-4 w-4 text-red-500" />}
+                        <Minus className="h-4 w-4 text-zinc-500" />
                       </td>
                     </tr>
                   ))}
@@ -132,18 +118,8 @@ export function Dashboard() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6">
-              {recentActivity.map((activity) => (
-                <div key={activity.id} className="flex items-start gap-4">
-                  <div className="mt-0.5 rounded-full bg-zinc-800 p-1.5">
-                    <activity.icon className="h-4 w-4 text-zinc-400" />
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-medium leading-none">{activity.text}</p>
-                    <p className="text-xs text-zinc-500">{activity.time}</p>
-                  </div>
-                </div>
-              ))}
+            <div className="flex items-center justify-center h-32 text-zinc-500 text-sm">
+              No recent activity
             </div>
           </CardContent>
         </Card>
@@ -155,19 +131,8 @@ export function Dashboard() {
           <CardTitle>Portfolio Performance (30 Days)</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="h-[300px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={performanceData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
-                <XAxis dataKey="date" stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="#52525b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${value}`} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#18181b', borderColor: '#27272a', color: '#f4f4f5' }}
-                  itemStyle={{ color: '#10b981' }}
-                  formatter={(value: number) => [`$${value.toFixed(2)}`, 'Value']}
-                />
-                <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 6 }} />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-[300px] w-full flex items-center justify-center text-zinc-500 text-sm">
+            No performance data yet
           </div>
         </CardContent>
       </Card>

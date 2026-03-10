@@ -25,22 +25,3 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   }
   return res.json();
 }
-
-// Kept for mock data fallback during development
-import { sleep } from "../lib/utils";
-
-export async function mockApiCall<T>(
-  path: string,
-  payload: T,
-  delayMs = 300
-): Promise<ATResponse<T>> {
-  await sleep(delayMs);
-  return {
-    RequestUserAlias: "edge-user",
-    RequestPath: path,
-    RequestStatus: "Succeeded",
-    ResponseCode: 200,
-    ResponseMessage: "Success",
-    Payload: payload,
-  };
-}

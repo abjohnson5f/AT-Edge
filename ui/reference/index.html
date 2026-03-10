@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<!--
+   ______                            __
+  / ____/___  ____ ___  ____  __  __/ /____  _____
+ / /   / __ \/ __ `__ \/ __ \/ / / / __/ _ \/ ___/
+/ /___/ /_/ / / / / / / /_/ / /_/ / /_/  __/ /
+\____/\____/_/ /_/ /_/ .___/\__,_/\__/\___/_/
+                    /_/
+        Created with Perplexity Computer
+        https://www.perplexity.ai/computer
+-->
+
+<!-- Perplexity Computer Attribution — SEO Meta Tags -->
+<meta name="generator" content="Perplexity Computer">
+<meta name="author" content="Perplexity Computer">
+<meta property="og:see_also" content="https://www.perplexity.ai/computer">
+<link rel="author" href="https://www.perplexity.ai/computer">
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MoonBucks — Financial Analytics Dashboard</title>
+<link rel="stylesheet" href="./base.css">
+<link rel="stylesheet" href="./style.css">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+<script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body>
+
+<div class="dashboard">
+  <!-- ===== SIDEBAR ===== -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="16" cy="16" r="14" fill="#547C81"/>
+        <path d="M12 22V12l4 3 4-3v10" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="sidebar-nav-item active" aria-label="Dashboard">
+        <i data-lucide="layout-dashboard" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="Charts">
+        <i data-lucide="candlestick-chart" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="Portfolio">
+        <i data-lucide="briefcase" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="Watchlists">
+        <i data-lucide="star" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="Alerts">
+        <i data-lucide="bell" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="Reports">
+        <i data-lucide="file-text" style="width:20px;height:20px"></i>
+      </button>
+      <button class="sidebar-nav-item" aria-label="News">
+        <i data-lucide="newspaper" style="width:20px;height:20px"></i>
+      </button>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <button class="sidebar-nav-item" aria-label="Settings">
+        <i data-lucide="settings" style="width:20px;height:20px"></i>
+      </button>
+      <div class="sidebar-avatar">AB</div>
+    </div>
+  </aside>
+
+  <!-- ===== HEADER ===== -->
+  <header class="header">
+    <div class="header-brand">
+      MoonBucks
+      <span>not only to the moon, but beyond</span>
+    </div>
+
+    <div class="header-search">
+      <i data-lucide="search" style="width:14px;height:14px"></i>
+      <input type="text" placeholder="Search stocks, funds...">
+    </div>
+
+    <div class="header-ticker">
+      <div class="ticker-item">
+        <span class="ticker-symbol">MSFT</span>
+        <span class="ticker-price">399.32</span>
+        <span class="ticker-change positive">+2.0 (0.47%)</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-symbol">AAPL</span>
+        <span class="ticker-price">234.56</span>
+        <span class="ticker-change positive">+1.23 (0.53%)</span>
+      </div>
+      <div class="ticker-item">
+        <span class="ticker-symbol">NVDA</span>
+        <span class="ticker-price">875.28</span>
+        <span class="ticker-change negative">-4.12 (-0.47%)</span>
+      </div>
+    </div>
+
+    <div class="header-right">
+      <div class="header-portfolio">
+        <span class="header-portfolio-value">$39,551.76</span>
+        <span class="header-portfolio-change">+$453.12 (+1.16%)</span>
+      </div>
+      <div class="header-portfolio" style="margin-left: 8px">
+        <span class="header-portfolio-value" style="font-size: var(--text-sm)">$7,960.11</span>
+        <span class="header-portfolio-change" style="font-size: 10px">+$47.76 (+0.6%)</span>
+      </div>
+      <div class="header-user-avatar"></div>
+    </div>
+  </header>
+
+  <!-- ===== MAIN CONTENT ===== -->
+  <main class="main-content">
+    <!-- Stock Info Bar -->
+    <div class="stock-info-bar">
+      <div class="stock-info-left">
+        <div class="stock-logo msft">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+            <rect x="1" y="1" width="8" height="8" fill="#F25022"/>
+            <rect x="11" y="1" width="8" height="8" fill="#7FBA00"/>
+            <rect x="1" y="11" width="8" height="8" fill="#00A4EF"/>
+            <rect x="11" y="11" width="8" height="8" fill="#FFB900"/>
+          </svg>
+        </div>
+        <div class="stock-details">
+          <h3>Microsoft Corp</h3>
+          <span>Nasdaq · MSFT</span>
+        </div>
+      </div>
+
+      <div class="stock-price-info">
+        <span class="stock-current-price">399.32</span>
+        <span class="stock-price-change positive">+2.0 (0.47%)</span>
+      </div>
+
+      <div class="stock-indicators">
+        <div class="indicator-chip active">
+          <i data-lucide="trending-up" style="width:12px;height:12px"></i>
+          SMA (20)
+        </div>
+        <div class="indicator-chip">
+          <i data-lucide="dollar-sign" style="width:12px;height:12px"></i>
+          Price
+        </div>
+        <div class="indicator-chip">
+          <i data-lucide="clock" style="width:12px;height:12px"></i>
+          RTH
+        </div>
+      </div>
+
+      <div class="stock-actions">
+        <button class="btn-sell">Sell 388.76</button>
+        <button class="btn-buy">Buy 388.99</button>
+      </div>
+    </div>
+
+    <!-- Chart Area -->
+    <div class="chart-area">
+      <div class="chart-header">
+        <div class="chart-timeframes">
+          <button class="chart-timeframe">1m</button>
+          <button class="chart-timeframe">5m</button>
+          <button class="chart-timeframe">15m</button>
+          <button class="chart-timeframe">1H</button>
+          <button class="chart-timeframe active">1D</button>
+          <button class="chart-timeframe">1W</button>
+          <button class="chart-timeframe">1M</button>
+        </div>
+        <div class="chart-tools">
+          <button class="chart-tool" aria-label="Cursor">
+            <i data-lucide="mouse-pointer-2" style="width:16px;height:16px"></i>
+          </button>
+          <button class="chart-tool" aria-label="Crosshair">
+            <i data-lucide="crosshair" style="width:16px;height:16px"></i>
+          </button>
+          <button class="chart-tool" aria-label="Draw">
+            <i data-lucide="pen-line" style="width:16px;height:16px"></i>
+          </button>
+          <button class="chart-tool" aria-label="Text">
+            <i data-lucide="type" style="width:16px;height:16px"></i>
+          </button>
+          <button class="chart-tool" aria-label="Measure">
+            <i data-lucide="ruler" style="width:16px;height:16px"></i>
+          </button>
+          <button class="chart-tool" aria-label="Settings">
+            <i data-lucide="settings-2" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="chart-container" id="chart-container"></div>
+
+      <div class="chart-bottom-bar">
+        <div class="chart-companies">
+          <button class="add-company" aria-label="Add company">
+            <i data-lucide="plus" style="width:14px;height:14px"></i>
+          </button>
+          <div class="company-chip">
+            <div class="company-chip-logo" style="background: #76B900">N</div>
+            Nvidia
+          </div>
+          <div class="company-chip">
+            <div class="company-chip-logo" style="background: #333">M</div>
+            Mercedes
+          </div>
+          <div class="company-chip active">
+            <div class="company-chip-logo" style="background: #00A4EF">M</div>
+            Microsoft
+          </div>
+          <div class="company-chip">
+            <div class="company-chip-logo" style="background: #000">A</div>
+            Apple
+          </div>
+        </div>
+
+        <div class="volume-toggle">
+          <i data-lucide="bar-chart-3" style="width:14px;height:14px"></i>
+          <span>Volume</span>
+          <span style="color: var(--color-text-secondary)">AAPL · HQ · ADD · KJ</span>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===== RIGHT PANEL ===== -->
+  <aside class="right-panel">
+    <!-- Watchlist -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">Watchlist</span>
+        <div class="panel-card-actions">
+          <button class="panel-action-btn" aria-label="Add">
+            <i data-lucide="plus" style="width:16px;height:16px"></i>
+          </button>
+          <button class="panel-action-btn" aria-label="Refresh">
+            <i data-lucide="refresh-cw" style="width:16px;height:16px"></i>
+          </button>
+          <button class="panel-action-btn" aria-label="Menu">
+            <i data-lucide="more-horizontal" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+
+      <table class="watchlist-table">
+        <thead>
+          <tr>
+            <th>Symbol</th>
+            <th>Chart</th>
+            <th>Last</th>
+            <th>Chg%</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="watchlist-symbol">MSFT</div>
+              <div class="watchlist-name">Microsoft</div>
+            </td>
+            <td><canvas class="watchlist-sparkline" data-trend="up" data-values="380,382,385,383,386,388,390,388,392,395,398,399"></canvas></td>
+            <td>388.06</td>
+            <td class="positive-text">+0.43%</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="watchlist-symbol">SPX</div>
+              <div class="watchlist-name">S&amp;P 500</div>
+            </td>
+            <td><canvas class="watchlist-sparkline" data-trend="up" data-values="6020,6030,6040,6050,6060,6055,6065,6070,6080,6086"></canvas></td>
+            <td>6,086.37</td>
+            <td class="positive-text">+0.61%</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="watchlist-symbol">NDQ</div>
+              <div class="watchlist-name">Nasdaq</div>
+            </td>
+            <td><canvas class="watchlist-sparkline" data-trend="up" data-values="22500,22550,22600,22700,22650,22750,22800,22850,22888"></canvas></td>
+            <td>22,888.50</td>
+            <td class="positive-text">+1.35%</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="watchlist-symbol">DJI</div>
+              <div class="watchlist-name">Dow Jones</div>
+            </td>
+            <td><canvas class="watchlist-sparkline" data-trend="down" data-values="45800,45700,45600,45500,45400,45300,45200,45100,45056"></canvas></td>
+            <td>45,056.73</td>
+            <td class="negative-text">-1.74%</td>
+          </tr>
+          <tr>
+            <td>
+              <div class="watchlist-symbol">AAPL</div>
+              <div class="watchlist-name">Apple Inc</div>
+            </td>
+            <td><canvas class="watchlist-sparkline" data-trend="up" data-values="230,231,232,233,232,234,233,235,234"></canvas></td>
+            <td>234.56</td>
+            <td class="positive-text">+0.78%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Expandable sections -->
+      <div class="expandable-section">
+        Shares
+        <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
+      </div>
+      <div class="expandable-section">
+        Futures
+        <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
+      </div>
+      <div class="expandable-section">
+        Cryptocurrencies
+        <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
+      </div>
+    </div>
+
+    <!-- Alerts -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">Alerts</span>
+        <div class="panel-card-actions">
+          <button class="panel-action-btn" aria-label="Add alert">
+            <i data-lucide="plus" style="width:16px;height:16px"></i>
+          </button>
+          <button class="panel-action-btn" aria-label="Filter">
+            <i data-lucide="filter" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="alerts-tabs">
+        <button class="alert-tab active">Alerts</button>
+        <button class="alert-tab">History</button>
+        <button class="alert-tab">System</button>
+      </div>
+
+      <div class="alert-item">
+        <div class="alert-icon green">
+          <i data-lucide="trending-up" style="width:16px;height:16px"></i>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">SMA Crossing</div>
+          <div class="alert-desc">AAPL, 1D</div>
+        </div>
+        <span class="alert-status triggered">Triggered</span>
+      </div>
+
+      <div class="alert-item">
+        <div class="alert-icon red">
+          <i data-lucide="trending-down" style="width:16px;height:16px"></i>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">Price Below 380</div>
+          <div class="alert-desc">MSFT, 1D</div>
+        </div>
+        <span class="alert-status stopped">Stopped</span>
+      </div>
+
+      <div class="alert-item">
+        <div class="alert-icon gray">
+          <i data-lucide="activity" style="width:16px;height:16px"></i>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">Volume Spike</div>
+          <div class="alert-desc">NVDA, 4H</div>
+        </div>
+        <span class="alert-status active">Active</span>
+      </div>
+
+      <div class="alert-item">
+        <div class="alert-icon green">
+          <i data-lucide="arrow-up-right" style="width:16px;height:16px"></i>
+        </div>
+        <div class="alert-content">
+          <div class="alert-title">RSI Overbought</div>
+          <div class="alert-desc">SPX, 1W</div>
+        </div>
+        <span class="alert-status triggered">Triggered</span>
+      </div>
+    </div>
+
+    <!-- Asset Info -->
+    <div class="panel-card">
+      <div class="panel-card-header">
+        <span class="panel-card-title">Asset Information</span>
+        <div class="panel-card-actions">
+          <button class="panel-action-btn" aria-label="More">
+            <i data-lucide="more-horizontal" style="width:16px;height:16px"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="asset-info">
+        <div class="asset-header">
+          <div class="asset-logo">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="white">
+              <path d="M15.5 10c0-.2-.1-.3-.3-.4l-3.8-2.2c-.2-.1-.4 0-.4.2v1.2H6.5c-.3 0-.5.2-.5.5v1.4c0 .3.2.5.5.5H11v1.2c0 .2.2.3.4.2l3.8-2.2c.2-.1.3-.2.3-.4z"/>
+            </svg>
+          </div>
+          <div class="asset-name">
+            <h4>AAPL</h4>
+            <span>Apple Inc · Nasdaq</span>
+          </div>
+        </div>
+
+        <div class="asset-sector">Electronic Technology · Telecommunications Equipment</div>
+
+        <div class="asset-prices">
+          <div class="asset-price-row">
+            <div>
+              <span class="asset-price-value">234.56 USD</span>
+              <span class="asset-price-change positive-text" style="margin-left: 8px">+3.19%</span>
+            </div>
+            <span class="asset-badge delayed">Delayed</span>
+          </div>
+          <div class="asset-price-row">
+            <div>
+              <span class="asset-price-value">234.33 USD</span>
+              <span class="asset-price-change positive-text" style="margin-left: 8px">+3.17%</span>
+            </div>
+            <div style="display:flex; gap: 4px">
+              <span class="asset-badge sell">Sell</span>
+              <span class="asset-badge buy">Buy</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<!-- Footer Attribution -->
+<div class="footer-attr">
+  <a href="https://www.perplexity.ai/computer" target="_blank" rel="noopener noreferrer">
+    Created with Perplexity Computer
+  </a>
+</div>
+
+<script src="./app.js"></script>
+</body>
+</html>

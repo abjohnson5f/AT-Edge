@@ -1,8 +1,13 @@
 # AT Edge — Handoff Document
 
-**Last Updated:** 03/08/2026
+**Last Updated:** 03/09/2026
 **Location:** `/Users/alexjohnson/AVGJ Apps/at-edge/`
-**Status:** Built, compiles clean, not yet tested with live API keys
+**Status:** Phase 3 complete (data pipeline live, 8,850 trades in Neon). Phase 4 next (production readiness).
+
+**Build Plan:** See `PLAN.md` for current phase details and exact task list.
+**Memory:** See `.claude/projects/.../memory/` for AT API patterns, production blockers.
+**Skill:** `/at-edge-dev` loads full project context for new sessions.
+**Subagent prompts:** `.claude/agents/at-edge-production-agent.md` for parallelized Phase 4 work.
 
 ---
 
@@ -312,32 +317,45 @@ update_decay_tiers()  -- Moves facts hot → warm → cold based on last_accesse
 
 ## What Works / What Doesn't
 
-### Working
+### Working (Verified Live 03/09/2026)
 - Server compiles clean (TypeScript strict)
-- UI compiles and builds clean (Vite, 944KB bundle)
+- UI compiles and builds clean (Vite)
 - All routes defined and wired
 - Memory system fully integrated into agent loop
-- Mock data mode for UI development
 - Dry run safety on all write operations
 - TopBar DRY_RUN toggle synced with server
 - Connection status indicator in TopBar
 - Database migration runs automatically on startup
 - Graceful degradation: everything works without DATABASE_URL, just no memory
+- **AT API live calls working** with production key
+- **Neon database connected** — 8,850 trades, 35 locations, 38 snapshots
+- **Data pipeline running** — collector pulls every 4 hours, stores to Neon
+- **Chart data API** — `/api/chart-data/:alias` serves OHLC, volume, demand from Neon
+- **Per-series data source badges** — LIVE DATA / PARTIAL DATA / SIMULATED on charts
+- **Backfill complete** — 33 locations with 60 days of future comparable trade data
 
-### Not Yet Tested
-- Live AT API calls (needs `AT_API_KEY` in `.env`)
-- Claude agent invocations (needs `ANTHROPIC_API_KEY` in `.env`)
-- Neon database connection (needs `DATABASE_URL` in `.env`)
-- Gmail import automation (needs OAuth setup)
-- pgvector semantic search (table exists, embedding pipeline not built yet)
+### Tested and Working AT API Endpoints
+- toplist, bid/ask imbalance, underserved, most viewed
+- comparable trades (future dates only)
+- location metrics, inventory types, search
+- account list
 
-### Known Issues / TODO
-- Gmail OAuth setup needs user walkthrough (create Google Cloud project, enable Gmail API, generate refresh token)
-- pgvector embedding pipeline not implemented — `memory_embeddings` table exists but nothing writes to it yet. Will need an embedding model call (OpenAI `text-embedding-3-small` or Anthropic) when storing facts/sessions.
-- Decay cycle runs manually via `POST /api/memory/decay` — should be a cron job (could be n8n workflow or node-cron in server)
-- UI doesn't have a Memory/Intelligence page yet — the `/api/memory/*` endpoints exist but no frontend visualization
-- The `src/agents/` standalone modules overlap with `server/routes/` — the standalone CLI agents were built first, then the server routes were built with the same logic. Could be consolidated.
-- Bundle size warning: 944KB (could split with dynamic imports for Scout/Import pages)
+### Known Non-Working AT API Endpoints
+- `get_metric_history`: "No available metrics" for this account
+- `get_highest_converting_locations`: "No available metrics" for this account
+
+### Phase 4 Blockers (See PLAN.md)
+- **pageSize defaults are 50** — must be 25 (breaks all market data routes + agent tools)
+- **VITE_USE_MOCK=true** — UI uses mock data instead of real API
+- **MOCK_RESTAURANTS** hard-coded in DashboardShell.tsx
+- **Mock transactions** in Account.tsx (real endpoint exists)
+- **Hard-coded stats** in Dashboard.tsx
+- **MOCK_ALERTS** in AlertsPanel.tsx (no alert system exists)
+- Gmail OAuth not set up
+- pgvector embedding pipeline not implemented
+- Decay cycle manual only (`POST /api/memory/decay`)
+- No Memory/Intelligence page in UI
+- `src/agents/` standalone modules overlap with `server/routes/`
 
 ---
 

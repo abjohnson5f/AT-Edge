@@ -25,7 +25,7 @@ marketdataRoutes.get("/scout", async (_req, res) => {
   try {
     const result = await runAgent(
       SCOUT_SYSTEM,
-      `Run a full market scan. Pull data from all 5 market data sources (highest converting, bid/ask imbalance, underserved, most viewed, toplist) with pageSize=50. Then analyze and produce an intelligence report with the top opportunities.
+      `Run a full market scan. Pull data from all 5 market data sources (highest converting, bid/ask imbalance, underserved, most viewed, toplist) with pageSize=25. Then analyze and produce an intelligence report with the top opportunities.
 
 Today's date: ${new Date().toLocaleDateString("en-US")}
 
@@ -65,7 +65,7 @@ IMPORTANT: After your analysis, use the memory_learn tool to store any significa
 marketdataRoutes.get("/highest-converting", async (req, res) => {
   try {
     const api = new ATAPI();
-    const pageSize = Number(req.query.pageSize ?? 50);
+    const pageSize = Number(req.query.pageSize ?? 25);
     const result = await api.marketdata.getHighestConvertingLocations({ pageSize });
     res.json(result);
   } catch (err) {
@@ -77,7 +77,7 @@ marketdataRoutes.get("/highest-converting", async (req, res) => {
 marketdataRoutes.get("/bid-imbalance", async (req, res) => {
   try {
     const api = new ATAPI();
-    const pageSize = Number(req.query.pageSize ?? 50);
+    const pageSize = Number(req.query.pageSize ?? 25);
     const result = await api.marketdata.getMostBidsLeastAsks({ pageSize });
     res.json(result);
   } catch (err) {
@@ -89,7 +89,7 @@ marketdataRoutes.get("/bid-imbalance", async (req, res) => {
 marketdataRoutes.get("/underserved", async (req, res) => {
   try {
     const api = new ATAPI();
-    const pageSize = Number(req.query.pageSize ?? 50);
+    const pageSize = Number(req.query.pageSize ?? 25);
     const result = await api.marketdata.getMostUnderservedLocations({ pageSize });
     res.json(result);
   } catch (err) {
@@ -101,7 +101,7 @@ marketdataRoutes.get("/underserved", async (req, res) => {
 marketdataRoutes.get("/most-viewed", async (req, res) => {
   try {
     const api = new ATAPI();
-    const pageSize = Number(req.query.pageSize ?? 50);
+    const pageSize = Number(req.query.pageSize ?? 25);
     const result = await api.marketdata.getMostViewedLeastListings({ pageSize });
     res.json(result);
   } catch (err) {
@@ -113,7 +113,7 @@ marketdataRoutes.get("/most-viewed", async (req, res) => {
 marketdataRoutes.get("/toplist", async (req, res) => {
   try {
     const api = new ATAPI();
-    const pageSize = Number(req.query.pageSize ?? 50);
+    const pageSize = Number(req.query.pageSize ?? 25);
     const result = await api.marketdata.getToplist({ pageSize });
     res.json(result);
   } catch (err) {
