@@ -1,23 +1,21 @@
 import { useNavigate, useLocation } from 'react-router';
 import {
   LayoutDashboard,
-  CandlestickChart,
-  Briefcase,
-  Star,
-  Bell,
-  FileText,
+  Radar,
   Mail,
+  Briefcase,
+  Calculator,
+  UserCircle,
   Settings,
 } from 'lucide-react';
 
 const NAV_ITEMS = [
   { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard', path: '/' },
-  { id: 'charts', icon: CandlestickChart, label: 'Charts', path: '/' },
-  { id: 'portfolio', icon: Briefcase, label: 'Portfolio', path: '/portfolio' },
-  { id: 'watchlist', icon: Star, label: 'Watchlists', path: '/' },
-  { id: 'alerts', icon: Bell, label: 'Alerts', path: '/' },
-  { id: 'scout', icon: FileText, label: 'Scout', path: '/scout' },
+  { id: 'scout', icon: Radar, label: 'Scout', path: '/scout' },
   { id: 'import', icon: Mail, label: 'Import', path: '/import' },
+  { id: 'portfolio', icon: Briefcase, label: 'Portfolio', path: '/portfolio' },
+  { id: 'price-check', icon: Calculator, label: 'Price Check', path: '/price-check' },
+  { id: 'account', icon: UserCircle, label: 'Account', path: '/account' },
 ];
 
 export function Sidebar() {
@@ -39,9 +37,7 @@ export function Sidebar() {
 
       <nav className="sidebar-nav">
         {NAV_ITEMS.map(item => {
-          const isActive = item.path === '/'
-            ? location.pathname === '/' && item.id === 'dashboard'
-            : location.pathname === item.path;
+          const isActive = location.pathname === item.path;
 
           return (
             <button

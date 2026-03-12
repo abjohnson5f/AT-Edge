@@ -4,7 +4,6 @@
  */
 
 import { BrowserRouter, Routes, Route } from "react-router";
-import { AppLayout } from "./components/layout/AppLayout";
 import { DashboardShell } from "./components/trading/DashboardShell";
 import { Scout } from "./pages/Scout";
 import { Import } from "./pages/Import";
@@ -16,8 +15,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardShell />} />
-        <Route element={<AppLayout />}>
+        <Route element={<DashboardShell />}>
+          <Route path="/" element={null} />
           <Route path="/scout" element={<Scout />} />
           <Route path="/import" element={<Import />} />
           <Route path="/portfolio" element={<Portfolio />} />

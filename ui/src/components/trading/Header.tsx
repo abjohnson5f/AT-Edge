@@ -2,7 +2,7 @@ import { Search, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Restaurant } from './DashboardShell';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 interface HeaderProps {
   tickerRestaurants: Restaurant[];

@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
+import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { marketdataRoutes } from "./routes/marketdata.js";
 import { locationRoutes } from "./routes/location.js";
@@ -14,22 +16,32 @@ import { chartdataRoutes } from "./routes/chartdata.js";
 import { restaurantRoutes } from "./routes/restaurant.js";
 import { hasDatabase, runMigration } from "./db/index.js";
 import { runCollection } from "./collector.js";
+import { setupAuth, requireAuth, isAuthEnabled } from "./auth.js";
 
 dotenv.config();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
-const PORT = process.env.SERVER_PORT ?? 3001;
+const PORT = process.env.PORT ?? process.env.SERVER_PORT ?? 3001;
+const isProduction = process.env.NODE_ENV === "production";
 
-// Accept requests from both dev ports
+// CORS: Allow dev ports + production domain
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "http://localhost:4000",
-    "http://127.0.0.1:3000",
-    "http://127.0.0.1:4000",
-  ],
+  origin: isProduction
+    ? [process.env.BASE_URL || "https://www.reserveiq.io"]
+    : [
+        "http://localhost:3000",
+        "http://localhost:4000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:4000",
+      ],
+  credentials: true,
 }));
 app.use(express.json({ limit: "1mb" }));
+
+// Google OAuth (no-op if env vars not set)
+setupAuth(app);
+app.use(requireAuth);
 
 // Health check
 app.get("/api/health", (_req, res) => {
@@ -71,6 +83,31 @@ app.use("/api/agent", agentRoutes);
 app.use("/api/memory", memoryRoutes);
 app.use("/api/chart-data", chartdataRoutes);
 app.use("/api/restaurant", restaurantRoutes);
+
+// Production: serve React build from Express
+if (isProduction) {
+  const uiDist = path.join(__dirname, "..", "ui", "dist");
+
+  // Gate all UI access behind auth — unauthenticated users get redirected to Google OAuth
+  app.use((req, res, next) => {
+    // Always allow auth routes and API routes (API has its own auth middleware)
+    if (req.path.startsWith("/auth/") || req.path.startsWith("/api/")) return next();
+    // If auth is enabled and user is not authenticated, redirect to OAuth
+    if (isAuthEnabled() && !req.isAuthenticated()) {
+      const returnTo = encodeURIComponent(req.originalUrl);
+      return res.redirect(`/auth/google?returnTo=${returnTo}`);
+    }
+    next();
+  });
+
+  app.use(express.static(uiDist));
+
+  // SPA fallback — all non-API routes serve index.html
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/") || req.path.startsWith("/auth/")) return next();
+    res.sendFile(path.join(uiDist, "index.html"));
+  });
+}
 
 // Initialize database on startup (non-blocking)
 async function initDatabase() {

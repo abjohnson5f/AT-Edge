@@ -30,7 +30,7 @@ accountRoutes.get("/transactions", async (req, res) => {
   try {
     const api = new ATAPI();
     const result = await api.account.getTransactionHistory(
-      Number(req.query.pageSize ?? 50),
+      Number(req.query.pageSize ?? 25),
       Number(req.query.pageNumber ?? 0)
     );
     res.json(result);

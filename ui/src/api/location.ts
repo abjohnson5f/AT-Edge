@@ -8,3 +8,8 @@ export async function searchLocations(query: string): Promise<ATResponse<{ alias
 export async function getInventoryTypes(locationAlias: string): Promise<ATResponse<{ id: number; name: string }[]>> {
   return apiGet<ATResponse<{ id: number; name: string }[]>>(`/location/${locationAlias}/inventory-types`);
 }
+
+/** Fetch all known locations from the memory system (Neon DB) */
+export async function getLocations(): Promise<{ locations: Array<{ alias: string; name?: string }>; count: number }> {
+  return apiGet<{ locations: Array<{ alias: string; name?: string }>; count: number }>("/memory/locations");
+}

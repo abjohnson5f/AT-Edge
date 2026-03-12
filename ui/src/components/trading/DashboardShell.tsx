@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect, useMemo } from 'react';
+import { Outlet, useLocation } from 'react-router';
 import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { RestaurantInfoBar } from './RestaurantInfoBar';
@@ -20,7 +21,7 @@ export interface Restaurant {
   color: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001/api';
+const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
 // Fallback restaurants — used when both API calls fail
 const FALLBACK_RESTAURANTS: Restaurant[] = [
@@ -95,6 +96,8 @@ interface MemoryLocation {
 }
 
 export function DashboardShell() {
+  const location = useLocation();
+  const isDashboard = location.pathname === '/';
   const [restaurants, setRestaurants] = useState<Restaurant[]>(FALLBACK_RESTAURANTS);
   const [loading, setLoading] = useState(true);
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant>(FALLBACK_RESTAURANTS[0]);
@@ -272,7 +275,7 @@ export function DashboardShell() {
   }
 
   return (
-    <div className="dashboard">
+    <div className={isDashboard ? "dashboard" : "dashboard dashboard--page"}>
       <Sidebar />
       <Header
         tickerRestaurants={restaurants.slice(0, 3)}
@@ -282,42 +285,50 @@ export function DashboardShell() {
         onSelect={handleSelectRestaurant}
       />
       <main className="main-content">
-        <RestaurantInfoBar
-          restaurant={selectedRestaurant}
-          activeIndicators={activeIndicators}
-          onToggleIndicator={toggleIndicator}
-          onFillBid={() => setActionModal({ type: 'fill-bid', restaurant: selectedRestaurant })}
-          onCreateListing={() => setActionModal({ type: 'create-listing', restaurant: selectedRestaurant })}
-        />
-        <PriceChart
-          restaurant={selectedRestaurant}
-          activeIndicators={activeIndicators}
-          showVolume={showVolume}
-        />
-        <RestaurantTabs
-          restaurants={recentRestaurants}
-          activeAlias={selectedRestaurant.alias}
-          onSelect={handleSelectRestaurant}
-          showVolume={showVolume}
-          onToggleVolume={() => setShowVolume(v => !v)}
-          allRestaurants={restaurants}
-          onAddRestaurant={handleSelectRestaurant}
-        />
+        {isDashboard ? (
+          <>
+            <RestaurantInfoBar
+              restaurant={selectedRestaurant}
+              activeIndicators={activeIndicators}
+              onToggleIndicator={toggleIndicator}
+              onFillBid={() => setActionModal({ type: 'fill-bid', restaurant: selectedRestaurant })}
+              onCreateListing={() => setActionModal({ type: 'create-listing', restaurant: selectedRestaurant })}
+            />
+            <PriceChart
+              restaurant={selectedRestaurant}
+              activeIndicators={activeIndicators}
+              showVolume={showVolume}
+            />
+            <RestaurantTabs
+              restaurants={recentRestaurants}
+              activeAlias={selectedRestaurant.alias}
+              onSelect={handleSelectRestaurant}
+              showVolume={showVolume}
+              onToggleVolume={() => setShowVolume(v => !v)}
+              allRestaurants={restaurants}
+              onAddRestaurant={handleSelectRestaurant}
+            />
+          </>
+        ) : (
+          <Outlet />
+        )}
       </main>
-      <aside className="right-panel">
-        <div onClick={() => setProfileModal(selectedRestaurant)} style={{ cursor: 'pointer' }}>
-          <RestaurantDetailCard restaurant={selectedRestaurant} />
-        </div>
-        <WatchlistPanel
-          restaurants={watchlistRestaurants}
-          allRestaurants={restaurants}
-          onSelect={handleSelectRestaurant}
-          onAdd={addToWatchlist}
-          onRemove={removeFromWatchlist}
-          searchQuery={searchQuery}
-        />
-        <AlertsPanel />
-      </aside>
+      {isDashboard ? (
+        <aside className="right-panel">
+          <div onClick={() => setProfileModal(selectedRestaurant)} style={{ cursor: 'pointer' }}>
+            <RestaurantDetailCard restaurant={selectedRestaurant} />
+          </div>
+          <WatchlistPanel
+            restaurants={watchlistRestaurants}
+            allRestaurants={restaurants}
+            onSelect={handleSelectRestaurant}
+            onAdd={addToWatchlist}
+            onRemove={removeFromWatchlist}
+            searchQuery={searchQuery}
+          />
+          <AlertsPanel />
+        </aside>
+      ) : null}
 
       {actionModal && (
         <ActionModal

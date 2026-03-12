@@ -9,7 +9,44 @@ portfolioRoutes.get("/listings", async (_req, res) => {
   try {
     const api = new ATAPI();
     const result = await api.portfolio.getListings({ getPopularityScoreBracket: true });
-    res.json(result);
+
+    // AT API returns nested: Payload.KeyValueList[].KeyValueList[]
+    // where top-level groups are "AppointmentDrafts", "ApprovedAppointments", etc.
+    // Flatten all sub-group listings into a single array with normalized field names.
+    const payload = result.Payload as any;
+    const groups: any[] = payload?.KeyValueList ?? payload?.ResponseBody?.KeyValueList ?? [];
+
+    const listings: any[] = [];
+    for (const group of groups) {
+      const items: any[] = group?.KeyValueList ?? [];
+      for (const item of items) {
+        // Map AT API field names → UI expected field names
+        const scoreBracket = item.listingPopularityScoreBracket;
+        listings.push({
+          listingID: item.listingID,
+          locationAlias: item.locationAlias ?? "",
+          locationName: (item.locationAlias ?? "").replace(/-/g, " ").replace(/\b\w/g, (c: string) => c.toUpperCase()),
+          dateTime: item.listingTime ?? item.listingDate ?? "",
+          priceAmountInSmallestUnit: parseInt(item.listingCurrentAskingPrice ?? "0", 10),
+          inventoryTypeID: parseInt(item.inventoryTypeID ?? "0", 10),
+          inventoryTypeName: item.inventoryTypeName ?? "",
+          status: item.listingStatus ?? group.Name ?? "",
+          popularityScoreBracket: typeof scoreBracket === "object"
+            ? parseInt(scoreBracket?.ScoreVersion1Bracket ?? "0", 10)
+            : parseInt(String(scoreBracket ?? "0"), 10),
+          marketVisibility: item.listingStatus === "Approved",
+          locationCitySlug: item.locationCitySlug ?? "",
+          confirmationNumber: item.listingPublicConfirmationNumber ?? "",
+        });
+      }
+    }
+
+    res.json({
+      RequestStatus: result.RequestStatus,
+      ResponseCode: result.ResponseCode,
+      ResponseMessage: result.ResponseMessage,
+      Payload: listings,
+    });
   } catch (err) {
     res.status(500).json({ RequestStatus: "Failed", ResponseMessage: String(err) });
   }

@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { getAccounts, getTransactions } from "../api/account";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../components/ui/card";
-import { formatCurrency } from "../lib/utils";
-import { Badge } from "../components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../components/ui/table";
+import { getAccounts, getTransactions, getUserDetails } from "../api/account";
+import { formatCurrency, formatDate } from "../lib/utils";
+import { User, Wallet, ArrowUpRight, ArrowDownLeft, RefreshCw } from "lucide-react";
 
 interface Transaction {
   transactionID?: number;
@@ -19,107 +17,203 @@ interface Transaction {
   [key: string]: unknown;
 }
 
-export function Account() {
-  const { data, isLoading } = useQuery({ queryKey: ["accounts"], queryFn: getAccounts });
-  const accounts = data?.Payload || [];
+interface AccountEntry {
+  accountID: string;
+  accountName: string;
+  accountDescription?: string;
+  accountAvailableCurrencyBalance: number;
+  accountAvailablePointsBalance: number;
+  accountNameAndBalance?: string;
+  [key: string]: unknown;
+}
 
-  const { data: txData, isLoading: txLoading } = useQuery({
-    queryKey: ["transactions"],
-    queryFn: () => getTransactions(25, 0) as Promise<{ Payload?: Transaction[] }>,
+function extractList<T>(payload: unknown): T[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  const p = payload as Record<string, any>;
+  const kvl = p?.ResponseBody?.KeyValueList;
+  if (Array.isArray(kvl)) return kvl;
+  return [];
+}
+
+export function Account() {
+  const { data: userDetails, isLoading: userLoading } = useQuery({
+    queryKey: ["userDetails"],
+    queryFn: getUserDetails,
   });
-  const transactions: Transaction[] = txData?.Payload || [];
+
+  const { data, isLoading } = useQuery({ queryKey: ["accounts"], queryFn: getAccounts });
+  const accounts = extractList<AccountEntry>(data?.Payload);
+
+  const { data: txData, isLoading: txLoading, isError: txError } = useQuery({
+    queryKey: ["transactions"],
+    queryFn: () => getTransactions(25, 0) as Promise<{ Payload?: unknown }>,
+    retry: false,
+  });
+  const transactions: Transaction[] = extractList<Transaction>(txData?.Payload);
+
+  const rawPayload = userDetails?.Payload as Record<string, any> | undefined;
+
+  const skipFields = new Set([
+    "userTaxEarningsData", "userTaxEarningsDataLastUpdateDate",
+    "userCommunityVerificationUsers", "userCommunityVerifiedDataPrivacySetting",
+    "ATResponseObjectType", "ResponseBody",
+  ]);
+
+  const userFields: Record<string, string> = {};
+  if (rawPayload && typeof rawPayload === "object" && !Array.isArray(rawPayload)) {
+    for (const [k, v] of Object.entries(rawPayload)) {
+      if (!skipFields.has(k) && v != null && v !== "" && v !== "null" && typeof v !== "object") {
+        userFields[k] = String(v);
+      }
+    }
+  }
+
+  const labelMap: Record<string, string> = {
+    userId: "User ID",
+    userAlias: "Alias",
+    userEmail: "Email",
+    userFirstName: "First Name",
+    userLastName: "Last Name",
+    userProfession: "Profession",
+    userNumberLogins: "Total Logins",
+    userAccountStatus: "Account Status",
+    userAccountPayoutDetailsStatus: "Payout Status",
+    userAccountPayoutDetailsStatusLastUpdateDate: "Payout Updated",
+    userCommunityVerificationStatus: "Community Verified",
+  };
 
   return (
-    <div className="flex flex-col gap-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-bold tracking-tight">Account Management</h1>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {isLoading ? (
-          <div className="text-zinc-500">Loading accounts...</div>
-        ) : (
-          accounts.map((acc, i) => (
-            <Card key={acc.accountID} className={`bg-zinc-950 border-zinc-800 ${i === 0 ? 'border-green-500/30 shadow-[0_0_10px_rgba(16,185,129,0.05)]' : ''}`}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle>{acc.accountName}</CardTitle>
-                  {i === 0 && <Badge variant="success">Primary</Badge>}
-                </div>
-                <CardDescription>ID: {acc.accountID}</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <div className="text-sm text-zinc-400">Available Balance</div>
-                    <div className="text-3xl font-bold text-white">{formatCurrency(acc.balance)}</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t border-zinc-800">
-                    <div>
-                      <div className="text-xs text-zinc-500">Credit Limit</div>
-                      <div className="text-sm font-medium">{formatCurrency(acc.creditLimit)}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-zinc-500">Currency</div>
-                      <div className="text-sm font-medium">{acc.currency}</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))
-        )}
+    <div className="page-container">
+      <div className="page-header">
+        <h1 className="page-title">Account</h1>
       </div>
 
-      <Card className="bg-zinc-950 border-zinc-800 mt-4">
-        <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <Table>
-            <TableHeader className="bg-zinc-900/50">
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {txLoading ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-zinc-500 py-8">Loading transactions...</TableCell>
-                </TableRow>
+      {/* User Details */}
+      <div className="acct-section">
+        <div className="acct-section-header">
+          <User size={14} />
+          <span>User Details</span>
+        </div>
+        <div className="acct-section-body">
+          {userLoading ? (
+            <div className="scout-loading"><RefreshCw size={14} className="spinning" /> Loading user details...</div>
+          ) : Object.keys(userFields).length === 0 ? (
+            <div className="acct-empty">No user details available</div>
+          ) : (
+            <div className="acct-user-grid">
+              {Object.entries(userFields).map(([key, value]) => (
+                <div key={key} className="acct-user-field">
+                  <span className="acct-user-label">{labelMap[key] || key}</span>
+                  <span className="acct-user-value">{value}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Accounts */}
+      {isLoading ? (
+        <div className="scout-loading"><RefreshCw size={14} className="spinning" /> Loading accounts...</div>
+      ) : (
+        <div className="acct-cards">
+          {accounts.map((acc) => {
+            const balance = Number(acc.accountAvailableCurrencyBalance) || 0;
+            const isMain = acc.accountName === "Main Account";
+            return (
+              <div key={acc.accountID} className={`acct-card ${isMain ? "acct-card-primary" : ""}`}>
+                <div className="acct-card-top">
+                  <div>
+                    <div className="acct-card-name">{acc.accountName}</div>
+                    <div className="acct-card-id">ID: {acc.accountID}</div>
+                  </div>
+                  {isMain && <span className="acct-badge-primary">Primary</span>}
+                </div>
+                <div className="acct-card-balance">
+                  <span className="acct-card-balance-label">Available Balance</span>
+                  <span className="acct-card-balance-value">{formatCurrency(balance)}</span>
+                </div>
+                {acc.accountDescription && (
+                  <div className="acct-card-desc">{acc.accountDescription}</div>
+                )}
+                <div className="acct-card-footer">
+                  <div className="acct-card-stat">
+                    <span className="acct-card-stat-label">Points Balance</span>
+                    <span className="acct-card-stat-value">{Number(acc.accountAvailablePointsBalance) || 0}</span>
+                  </div>
+                  <div className="acct-card-stat">
+                    <span className="acct-card-stat-label">Currency</span>
+                    <span className="acct-card-stat-value">USD</span>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Transaction History */}
+      <div className="acct-section">
+        <div className="acct-section-header">
+          <Wallet size={14} />
+          <span>Recent Transactions</span>
+        </div>
+        <div className="scout-table-container">
+          <table className="scout-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Description</th>
+                <th className="scout-th-right">Amount</th>
+                <th className="scout-th-right">Balance</th>
+              </tr>
+            </thead>
+            <tbody>
+              {txLoading && !txError ? (
+                <tr>
+                  <td colSpan={5} className="acct-table-empty">Loading transactions...</td>
+                </tr>
               ) : transactions.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-zinc-500 py-8">No transaction history available</TableCell>
-                </TableRow>
+                <tr>
+                  <td colSpan={5} className="acct-table-empty">No transaction history available</td>
+                </tr>
               ) : (
                 transactions.map((tx, i) => {
                   const txDate = tx.date || tx.transactionDate || "";
                   const txType = tx.type || tx.transactionType || "Unknown";
                   const txAmount = tx.amount ?? tx.amountInSmallestUnit ?? 0;
                   const txBalance = tx.balance ?? tx.balanceAfter;
+                  const isPositive = txAmount > 0;
                   return (
-                    <TableRow key={tx.transactionID ?? i}>
-                      <TableCell className="text-zinc-400">{txDate ? new Date(txDate).toLocaleDateString() : "\u2014"}</TableCell>
-                      <TableCell>
-                        <Badge variant={txAmount > 0 ? "success" : txType === "Fee" ? "secondary" : "outline"}>
+                    <tr key={tx.transactionID ?? i} className="scout-row">
+                      <td><span className="scout-metric-dim">{formatDate(txDate) || "\u2014"}</span></td>
+                      <td>
+                        <span className={`acct-tx-type ${isPositive ? "credit" : txType === "Fee" ? "fee" : "debit"}`}>
+                          {isPositive ? <ArrowDownLeft size={10} /> : <ArrowUpRight size={10} />}
                           {txType}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{tx.description || "\u2014"}</TableCell>
-                      <TableCell className={`text-right font-mono font-medium ${txAmount > 0 ? 'text-green-500' : 'text-zinc-300'}`}>
-                        {txAmount > 0 ? '+' : ''}{formatCurrency(txAmount)}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-zinc-400">{txBalance != null ? formatCurrency(txBalance) : "\u2014"}</TableCell>
-                    </TableRow>
+                        </span>
+                      </td>
+                      <td>{tx.description || "\u2014"}</td>
+                      <td className="scout-td-right">
+                        <span className={`scout-metric-value ${isPositive ? "positive-text" : ""}`}>
+                          {isPositive ? "+" : ""}{formatCurrency(txAmount)}
+                        </span>
+                      </td>
+                      <td className="scout-td-right">
+                        <span className="scout-metric-dim">
+                          {txBalance != null ? formatCurrency(txBalance) : "\u2014"}
+                        </span>
+                      </td>
+                    </tr>
                   );
                 })
               )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 }
