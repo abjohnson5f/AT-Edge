@@ -10,6 +10,7 @@ import { Import } from "./pages/Import";
 import { Portfolio } from "./pages/Portfolio";
 import { PriceCheck } from "./pages/PriceCheck";
 import { Account } from "./pages/Account";
+import { Toaster } from "./components/ui/toaster";
 
 export default function App() {
   return (
@@ -24,6 +25,7 @@ export default function App() {
           <Route path="/account" element={<Account />} />
         </Route>
       </Routes>
+      <Toaster />
     </BrowserRouter>
   );
 }

@@ -2,7 +2,7 @@ import { Search, Loader2 } from 'lucide-react';
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { Restaurant } from './DashboardShell';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 interface HeaderProps {
   tickerRestaurants: Restaurant[];
@@ -356,7 +356,7 @@ export function Header({ tickerRestaurants, searchQuery, onSearchChange, allRest
         </div>
 
         <span className={`header-mode-badge ${dryRun ? 'dry-run' : 'live'}`}>
-          {dryRun ? 'Dry Run' : 'LIVE'}
+          {dryRun ? 'DRY RUN' : 'LIVE'}
         </span>
       </div>
     </header>

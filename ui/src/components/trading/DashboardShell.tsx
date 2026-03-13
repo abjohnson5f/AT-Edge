@@ -21,7 +21,7 @@ export interface Restaurant {
   color: string;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 // Fallback restaurants — used when both API calls fail
 const FALLBACK_RESTAURANTS: Restaurant[] = [

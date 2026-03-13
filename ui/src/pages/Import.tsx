@@ -151,7 +151,7 @@ export function Import() {
       parsed: pd,
       _queueId: item.id,
     });
-    setActiveTab("manual"); // show the listing creation UI
+    // Stay on auto tab — ListingPanel renders on the right side of import-auto-layout
   };
 
   // ── Manual parse ──
