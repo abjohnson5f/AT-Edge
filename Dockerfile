@@ -15,7 +15,9 @@ RUN cd ui && npm ci
 COPY . .
 
 # Build UI (Vite production build)
-RUN cd ui && npm run build
+# VITE_API_URL must be empty in production so the React app uses relative /api URLs
+# (the ui/.env file has localhost:3001 for local dev, which .dockerignore blocks from here)
+RUN cd ui && VITE_API_URL="" npm run build
 
 # ─── Production Stage ───
 FROM node:20-slim
