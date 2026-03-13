@@ -349,3 +349,16 @@ CREATE TABLE IF NOT EXISTS app_config (
   value       TEXT NOT NULL,
   updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+-- ============================================================
+-- SCREENSHOT UPLOADS
+-- Stores confirmation screenshots uploaded during listing creation.
+-- Served via GET /api/upload/screenshot/:id as public HTTPS images.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS screenshot_uploads (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  content_type TEXT NOT NULL DEFAULT 'image/png',
+  data         TEXT NOT NULL,  -- base64-encoded image bytes
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

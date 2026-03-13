@@ -3422,6 +3422,90 @@ body {
 
 .import-scan-cta { margin-top: var(--space-4); }
 
+/* ── Screenshot Upload ──────────────────────────────────────── */
+.screenshot-upload-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.screenshot-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-5) var(--space-4);
+  border: 1.5px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface-2);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  text-align: center;
+}
+.screenshot-dropzone:hover,
+.screenshot-dropzone.dragover {
+  border-color: var(--color-primary);
+  background: rgba(84, 124, 129, 0.08);
+}
+.screenshot-dropzone.dragover { border-style: solid; }
+
+.screenshot-icon { color: var(--color-text-muted); }
+.screenshot-prompt { font-size: var(--text-sm); color: var(--color-text-secondary); }
+.screenshot-prompt u { color: var(--color-primary); }
+.screenshot-hint { font-size: var(--text-xs); color: var(--color-text-muted); }
+
+.screenshot-preview {
+  position: relative;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  max-height: 200px;
+}
+.screenshot-img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  display: block;
+}
+.screenshot-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) var(--space-3);
+  background: rgba(0, 0, 0, 0.7);
+}
+.screenshot-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+}
+.screenshot-status.uploading { color: var(--color-text-secondary); }
+.screenshot-status.uploaded { color: var(--color-green); }
+.screenshot-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: none;
+  background: rgba(255,255,255,0.15);
+  color: white;
+  border-radius: 3px;
+  cursor: pointer;
+}
+.screenshot-clear:hover { background: rgba(239,68,68,0.5); }
+.screenshot-error {
+  font-size: var(--text-xs);
+  color: var(--color-red);
+  padding: var(--space-1) var(--space-2);
+}
+
 /* Auto badge */
 .import-badge.auto {
   background: rgba(84, 124, 129, 0.15);

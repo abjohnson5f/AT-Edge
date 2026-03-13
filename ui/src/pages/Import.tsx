@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Mail, Upload, CheckCircle2, CircleDashed, DollarSign, AlertTriangle, RefreshCw, Inbox, Zap, Clock, Wifi, WifiOff } from "lucide-react";
+import { ScreenshotUpload } from "../components/ScreenshotUpload";
 import Markdown from "react-markdown";
 import { formatCurrency, formatDate } from "../lib/utils";
 import { useToast } from "../components/ui/use-toast";
@@ -609,8 +610,15 @@ function ListingPanel({ parsedData, onCreateListing, onDismiss, showDismiss = tr
             <input type="text" defaultValue={parsedData.confirmationNumber} onChange={e => parsedData.confirmationNumber = e.target.value} className="import-input mono" />
           </div>
           <div className="import-field import-field--full">
-            <label>Screenshot URL <span style={{color: 'var(--color-text-muted)', fontWeight: 400, fontSize: 'var(--text-xs)'}}>(HTTPS image link — AT requires this)</span></label>
-            <input type="url" defaultValue={parsedData.screenshotUrl ?? ""} onChange={e => parsedData.screenshotUrl = e.target.value} className="import-input" placeholder="https://... (paste a link to your confirmation screenshot)" />
+            <label>
+              Confirmation Screenshot
+              <span className="import-required"> *</span>
+              <span style={{color: 'var(--color-text-muted)', fontWeight: 400, fontSize: 'var(--text-xs)', marginLeft: 6}}>AT requires a screenshot to review your listing</span>
+            </label>
+            <ScreenshotUpload
+              currentUrl={parsedData.screenshotUrl}
+              onUpload={(url) => { parsedData.screenshotUrl = url; }}
+            />
           </div>
         </div>
 

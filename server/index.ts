@@ -14,6 +14,7 @@ import { agentRoutes } from "./routes/agent.js";
 import { memoryRoutes } from "./routes/memory.js";
 import { chartdataRoutes } from "./routes/chartdata.js";
 import { restaurantRoutes } from "./routes/restaurant.js";
+import { uploadRoutes } from "./routes/upload.js";
 import { hasDatabase, runMigration } from "./db/index.js";
 import { runCollection } from "./collector.js";
 import { setupAuth, requireAuth, isAuthEnabled } from "./auth.js";
@@ -39,10 +40,13 @@ app.use(cors({
       ],
   credentials: true,
 }));
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "12mb" })); // base64 images can be ~8MB encoded
 
 // Google OAuth sign-in (no-op if env vars not set)
 setupAuth(app);
+
+// Screenshot image serving — public (AT platform fetches images to display in listings)
+app.use("/api/upload", uploadRoutes);
 
 app.use(requireAuth);
 
@@ -85,6 +89,7 @@ app.use("/api/agent", agentRoutes);
 app.use("/api/memory", memoryRoutes);
 app.use("/api/chart-data", chartdataRoutes);
 app.use("/api/restaurant", restaurantRoutes);
+// Note: /api/upload is mounted before requireAuth so images are publicly accessible
 
 // Production: serve React build from Express
 if (isProduction) {
