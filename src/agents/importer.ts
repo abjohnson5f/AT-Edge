@@ -1,7 +1,8 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { ATAPI } from "../api/index.js";
 import { config } from "../config.js";
-import { getUnprocessedEmails, markAsProcessed } from "../email/gmail.js";
+import { fetchEmailsSince } from "../email/gmail.js";
+import type { RawEmail } from "../email/gmail.js";
 import { parseReservationEmail } from "../email/parser.js";
 import type { ParsedReservation } from "../api/types.js";
 
@@ -60,17 +61,18 @@ export async function runImporter(options: {
     console.log("  Gmail skipped. Use --manual to paste an email.\n");
     return [];
   } else {
-    console.log("  Checking Gmail for forwarded reservations...\n");
-    const gmailMessages = await getUnprocessedEmails();
+    console.log("  Checking Gmail for recent reservation emails (last 48h)...\n");
+    const since = new Date(Date.now() - 48 * 60 * 60 * 1000);
+    const gmailMessages = await fetchEmailsSince(since);
 
     if (gmailMessages.length === 0) {
-      console.log("  No new reservation emails found.\n");
+      console.log("  No new emails found.\n");
       return [];
     }
 
-    console.log(`  Found ${gmailMessages.length} new email(s) to process.\n`);
-    emails = gmailMessages.map((m) => ({
-      id: m.id,
+    console.log(`  Found ${gmailMessages.length} email(s) to process.\n`);
+    emails = gmailMessages.map((m: RawEmail) => ({
+      id: String(m.uid),
       subject: m.subject,
       body: m.body,
     }));
@@ -217,10 +219,9 @@ export async function runImporter(options: {
         );
       }
 
-      // Step 8: Mark email as processed
+      // Step 8: Note processed (dedup handled by body hash in DB via server/email-scanner.ts)
       if (email.id !== "manual") {
-        await markAsProcessed(email.id);
-        console.log("    Email marked as processed.\n");
+        console.log("    Email processed.\n");
       }
 
       results.push({

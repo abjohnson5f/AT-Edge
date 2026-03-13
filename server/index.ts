@@ -17,6 +17,8 @@ import { restaurantRoutes } from "./routes/restaurant.js";
 import { hasDatabase, runMigration } from "./db/index.js";
 import { runCollection } from "./collector.js";
 import { setupAuth, requireAuth, isAuthEnabled } from "./auth.js";
+import { startEmailScanner, stopEmailScanner } from "./email-scanner.js";
+import { isImapConfigured } from "../src/email/gmail.js";
 
 dotenv.config();
 
@@ -39,8 +41,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: "1mb" }));
 
-// Google OAuth (no-op if env vars not set)
+// Google OAuth sign-in (no-op if env vars not set)
 setupAuth(app);
+
 app.use(requireAuth);
 
 // Health check
@@ -59,8 +62,7 @@ app.get("/api/config", (_req, res) => {
   res.json({
     dryRun: process.env.DRY_RUN !== "false",
     hasDatabase: hasDatabase(),
-    gmailConfigured:
-      !!process.env.GMAIL_CLIENT_ID && !!process.env.GMAIL_REFRESH_TOKEN,
+    gmailConfigured: isImapConfigured(),
   });
 });
 
@@ -90,9 +92,7 @@ if (isProduction) {
 
   // Gate all UI access behind auth — unauthenticated users get redirected to Google OAuth
   app.use((req, res, next) => {
-    // Always allow auth routes and API routes (API has its own auth middleware)
     if (req.path.startsWith("/auth/") || req.path.startsWith("/api/")) return next();
-    // If auth is enabled and user is not authenticated, redirect to OAuth
     if (isAuthEnabled() && !req.isAuthenticated()) {
       const returnTo = encodeURIComponent(req.originalUrl);
       return res.redirect(`/auth/google?returnTo=${returnTo}`);
@@ -142,15 +142,28 @@ function startPeriodicCollection() {
   }, COLLECTION_INTERVAL_MS);
 }
 
+// Graceful shutdown
+function shutdown() {
+  console.log("\n  Shutting down...");
+  stopEmailScanner();
+  if (collectionTimer) clearInterval(collectionTimer);
+  process.exit(0);
+}
+
+process.on("SIGTERM", shutdown);
+process.on("SIGINT", shutdown);
+
 app.listen(PORT, async () => {
-  console.log(`\n  AT Edge Server v0.1.0`);
+  console.log(`\n  AT Edge Server v0.2.2`);
   console.log(`  Port: ${PORT}`);
   console.log(`  Mode: ${process.env.DRY_RUN !== "false" ? "DRY RUN" : "LIVE"}`);
   console.log(`  AT API: ${process.env.AT_API_KEY ? "configured" : "MISSING"}`);
   console.log(`  Claude: ${process.env.ANTHROPIC_API_KEY ? "configured" : "MISSING"}`);
   console.log(`  Apify: ${process.env.APIFY_API_TOKEN ? "configured" : "NOT SET (restaurant enrichment limited)"}`);
+  console.log(`  Gmail: ${isImapConfigured() ? `IMAP (${process.env.GMAIL_USER})` : "NOT CONFIGURED (set GMAIL_USER + GMAIL_APP_PASSWORD)"}`);
 
   await initDatabase();
   startPeriodicCollection();
+  startEmailScanner(); // starts IMAP IDLE watcher + processing loop
   console.log("");
 });

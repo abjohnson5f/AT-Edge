@@ -11,11 +11,8 @@ export const config = {
     model: "claude-sonnet-4-20250514",
   },
   gmail: {
-    clientId: process.env.GMAIL_CLIENT_ID ?? "",
-    clientSecret: process.env.GMAIL_CLIENT_SECRET ?? "",
-    refreshToken: process.env.GMAIL_REFRESH_TOKEN ?? "",
-    importLabel: process.env.GMAIL_IMPORT_LABEL ?? "AT-Import",
-    processedLabel: "AT-Processed",
+    user: process.env.GMAIL_USER ?? "",
+    appPassword: process.env.GMAIL_APP_PASSWORD ?? "",
   },
   db: {
     url: process.env.DATABASE_URL ?? "",

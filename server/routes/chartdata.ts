@@ -103,13 +103,13 @@ chartdataRoutes.get("/:alias", async (req, res) => {
     const closes = candles.map(c => ({ time: c.time, value: c.close }));
     const sma = calculateSMA(closes, 20);
 
-    // 3. Conversion rate time series from market_snapshots
+    // 3. Conversion rate time series — one row per day (latest snapshot wins)
     const convSnapshots = await queryMany<SnapshotRow>(
-      `SELECT captured_at::text, data
+      `SELECT DISTINCT ON (DATE(captured_at)) captured_at::text, data
        FROM market_snapshots
        WHERE snapshot_type = 'conversion_rates'
          AND captured_at >= CURRENT_DATE - $1::integer
-       ORDER BY captured_at ASC`,
+       ORDER BY DATE(captured_at) ASC, captured_at DESC`,
       [days],
     );
 
@@ -124,13 +124,13 @@ chartdataRoutes.get("/:alias", async (req, res) => {
       })
       .filter(Boolean);
 
-    // 4. Demand index time series from market_snapshots
+    // 4. Demand index time series — one row per day (latest snapshot wins)
     const demandSnapshots = await queryMany<SnapshotRow>(
-      `SELECT captured_at::text, data
+      `SELECT DISTINCT ON (DATE(captured_at)) captured_at::text, data
        FROM market_snapshots
        WHERE snapshot_type = 'demand_index'
          AND captured_at >= CURRENT_DATE - $1::integer
-       ORDER BY captured_at ASC`,
+       ORDER BY DATE(captured_at) ASC, captured_at DESC`,
       [days],
     );
 

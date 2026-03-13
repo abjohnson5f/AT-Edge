@@ -158,6 +158,34 @@ interface DataSources {
   demand: 'live' | 'simulated';
 }
 
+// ── Dedup + sort helpers (TradingView requires strictly ascending unique timestamps) ──
+
+function dedupCandles<T extends { time: Time }>(arr: T[]): T[] {
+  const seen = new Set<string>();
+  return arr
+    .slice()
+    .sort((a, b) => String(a.time).localeCompare(String(b.time)))
+    .filter(item => {
+      const k = String(item.time);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
+function dedupLine<T extends { time: Time }>(arr: T[]): T[] {
+  const seen = new Set<string>();
+  return arr
+    .slice()
+    .sort((a, b) => String(a.time).localeCompare(String(b.time)))
+    .filter(item => {
+      const k = String(item.time);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+}
+
 // ── Chart Data Hook ──
 
 function useChartData(alias: string, avgPriceCents: number) {
@@ -230,19 +258,19 @@ function useChartData(alias: string, avgPriceCents: number) {
     hasAnyLive: Object.values(sources).some(s => s === 'live'),
     loading,
     candles: hasLiveCandles
-      ? apiData!.candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close }))
+      ? dedupCandles(apiData!.candles.map(c => ({ time: c.time as Time, open: c.open, high: c.high, low: c.low, close: c.close })))
       : mockCandles,
     volume: hasLiveVolume
-      ? apiData!.volume.map(v => ({ time: v.time as Time, value: v.value, color: v.color }))
+      ? dedupLine(apiData!.volume.map(v => ({ time: v.time as Time, value: v.value, color: v.color })))
       : mockOverlays.volume.map(v => ({ time: v.time as Time, value: v.value, color: v.color })),
     sma: hasLiveSMA
-      ? apiData!.sma.map(s => ({ time: s.time as Time, value: s.value }))
+      ? dedupLine(apiData!.sma.map(s => ({ time: s.time as Time, value: s.value })))
       : mockOverlays.sma.map(s => ({ time: s.time as Time, value: s.value })),
     conversion: hasLiveConversion
-      ? apiData!.conversion.map(c => ({ time: c.time as Time, value: c.value }))
+      ? dedupLine(apiData!.conversion.map(c => ({ time: c.time as Time, value: c.value })))
       : mockOverlays.conversion.map(c => ({ time: c.time as Time, value: c.value })),
     demand: hasLiveDemand
-      ? apiData!.demand.map(d => ({ time: d.time as Time, value: d.value }))
+      ? dedupLine(apiData!.demand.map(d => ({ time: d.time as Time, value: d.value })))
       : mockOverlays.demand.map(d => ({ time: d.time as Time, value: d.value })),
     totalTrades: apiData?.totalTrades ?? 0,
   };

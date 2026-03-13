@@ -26,6 +26,7 @@
     "express": "^4.21.2",
     "express-session": "^1.19.0",
     "googleapis": "^148.0.0",
+    "imapflow": "^1.2.13",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.20.0"

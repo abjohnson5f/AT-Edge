@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { createHash } from "crypto";
 import { runAgent } from "../agent.js";
-import { hasDatabase, recordImport, upsertLocation } from "../db/index.js";
+import { hasDatabase, query, queryMany, recordImport, upsertLocation } from "../db/index.js";
+import { triggerScanNow, getScannerStatus } from "../email-scanner.js";
 
 export const importRoutes = Router();
 
@@ -42,7 +43,9 @@ Return your final response as a JSON object (no markdown fencing) with this exac
 If you cannot find a matching location, set locationMatch to null and still return the parsed data.
 If you cannot get comparable trades, use reasonable estimates based on the restaurant type and market.`;
 
-// POST /api/import/parse — Parse an email and get pricing
+// ── POST /api/import/parse ─────────────────────────────────────────────────
+// Manual paste: parse an email and get pricing (unchanged from before)
+
 importRoutes.post("/parse", async (req, res) => {
   const { subject, body } = req.body;
 
@@ -67,7 +70,6 @@ Today's date: ${new Date().toLocaleDateString("en-US")}`,
       { sessionType: "import" },
     );
 
-    // Try to parse the JSON response from the agent
     let importData;
     try {
       const cleaned = result.text
@@ -76,11 +78,19 @@ Today's date: ${new Date().toLocaleDateString("en-US")}`,
         .trim();
       importData = JSON.parse(cleaned);
     } catch {
-      // If JSON parsing fails, return the raw text
-      importData = { rawAnalysis: result.text };
+      const firstBrace = result.text.indexOf("{");
+      const lastBrace = result.text.lastIndexOf("}");
+      if (firstBrace !== -1 && lastBrace > firstBrace) {
+        try {
+          importData = JSON.parse(result.text.slice(firstBrace, lastBrace + 1));
+        } catch {
+          importData = { rawAnalysis: result.text };
+        }
+      } else {
+        importData = { rawAnalysis: result.text };
+      }
     }
 
-    // Persist to memory (Tier 2 + Tier 3)
     if (hasDatabase()) {
       try {
         const bodyHash = createHash("sha256").update(body).digest("hex");
@@ -97,7 +107,6 @@ Today's date: ${new Date().toLocaleDateString("en-US")}`,
           sessionId: result.sessionId,
         });
 
-        // Upsert location entity if matched
         if (alias && importData.locationMatch?.name) {
           await upsertLocation(alias, importData.locationMatch.name);
         }
@@ -115,6 +124,106 @@ Today's date: ${new Date().toLocaleDateString("en-US")}`,
         sessionId: result.sessionId,
       },
     });
+  } catch (err) {
+    res.status(500).json({
+      RequestStatus: "Failed",
+      ResponseMessage: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+// ── GET /api/import/queue ──────────────────────────────────────────────────
+// Returns auto-imported reservations waiting for user review.
+// Items with status='auto_queued' are from the scanner.
+// Items with status='parsed' are from manual imports.
+
+importRoutes.get("/queue", async (_req, res) => {
+  if (!hasDatabase()) {
+    return res.json({
+      RequestStatus: "Succeeded",
+      Payload: { items: [] },
+    });
+  }
+
+  try {
+    const items = await queryMany<{
+      id: number;
+      email_subject: string;
+      parsed_data: unknown;
+      location_alias: string | null;
+      location_matched: boolean;
+      recommended_price: number | null;
+      agent_reasoning: string | null;
+      status: string;
+      created_at: string;
+    }>(
+      `SELECT id, email_subject, parsed_data, location_alias, location_matched,
+              recommended_price, agent_reasoning, status, created_at
+       FROM imports
+       WHERE status IN ('auto_queued', 'parsed')
+       AND (
+         parsed_data->>'restaurantName' IS NOT NULL
+         OR parsed_data->'parsed'->>'restaurantName' IS NOT NULL
+       )
+       ORDER BY created_at DESC
+       LIMIT 50`
+    );
+
+    res.json({
+      RequestStatus: "Succeeded",
+      Payload: { items, count: items.length },
+    });
+  } catch (err) {
+    res.status(500).json({
+      RequestStatus: "Failed",
+      ResponseMessage: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+// ── POST /api/import/scan-now ──────────────────────────────────────────────
+// Triggers an immediate inbox scan. UI "Scan Now" button calls this.
+
+importRoutes.post("/scan-now", async (_req, res) => {
+  try {
+    const result = await triggerScanNow();
+    res.json({
+      RequestStatus: "Succeeded",
+      Payload: result,
+    });
+  } catch (err) {
+    res.status(500).json({
+      RequestStatus: "Failed",
+      ResponseMessage: err instanceof Error ? err.message : String(err),
+    });
+  }
+});
+
+// ── GET /api/import/scanner-status ────────────────────────────────────────
+// Returns the email scanner's current state for the UI status indicator.
+
+importRoutes.get("/scanner-status", (_req, res) => {
+  res.json({
+    RequestStatus: "Succeeded",
+    Payload: getScannerStatus(),
+  });
+});
+
+// ── POST /api/import/queue/:id/dismiss ────────────────────────────────────
+// Dismisses an auto-imported item (marks it 'skipped').
+
+importRoutes.post("/queue/:id/dismiss", async (req, res) => {
+  const { id } = req.params;
+  if (!hasDatabase()) {
+    return res.json({ RequestStatus: "Succeeded" });
+  }
+
+  try {
+    await query(
+      "UPDATE imports SET status = 'skipped' WHERE id = $1",
+      [parseInt(id, 10)]
+    );
+    res.json({ RequestStatus: "Succeeded" });
   } catch (err) {
     res.status(500).json({
       RequestStatus: "Failed",

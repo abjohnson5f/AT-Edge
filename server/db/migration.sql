@@ -339,3 +339,13 @@ BEGIN
   WHERE status = 'active' AND last_accessed >= NOW() - INTERVAL '7 days' AND decay_tier != 'hot';
 END;
 $$ LANGUAGE plpgsql;
+
+-- ============================================================
+-- APP CONFIG (key-value store for OAuth tokens, settings, etc.)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS app_config (
+  key         TEXT PRIMARY KEY,
+  value       TEXT NOT NULL,
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
