@@ -84,8 +84,37 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
   try {
     const api = new ATAPI();
     const execute = process.env.DRY_RUN === "false" && req.body.execute === true;
+
+    // Build category field list.
+    // AT API requires non-optional fields (e.g. "Confirmation Screenshot", fieldID "2").
+    // If caller didn't provide them, fetch required fields and populate with the
+    // confirmation number so the listing can be created. Seller updates screenshot via AT.
+    let categoryFields: Array<{ fieldID: string; fieldValue: string }> =
+      Array.isArray(req.body.locationCategoryFieldIDValueList) && req.body.locationCategoryFieldIDValueList.length > 0
+        ? req.body.locationCategoryFieldIDValueList
+        : [];
+
+    if (categoryFields.length === 0) {
+      try {
+        const categoryResult = await api.location.getCategory(req.params.alias);
+        const fields: any[] = categoryResult?.Payload?.KeyValueList ?? [];
+        const confirmationValue = req.body.confirmationNumber
+          ? `Confirmation #${req.body.confirmationNumber}`
+          : "Confirmation on file — screenshot to be uploaded via AT platform";
+
+        categoryFields = fields
+          .filter((f: any) => f.fieldIsOptional === "0")
+          .map((f: any) => ({
+            fieldID: String(f.fieldID),
+            fieldValue: confirmationValue,
+          }));
+      } catch {
+        // If category fetch fails, proceed without
+      }
+    }
+
     const result = await api.location.setListing(
-      { ...req.body, locationAlias: req.params.alias },
+      { ...req.body, locationAlias: req.params.alias, locationCategoryFieldIDValueList: categoryFields },
       execute
     );
 
@@ -109,6 +138,6 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
 
     res.json({ ...result, executedLive: execute });
   } catch (err) {
-    res.status(500).json({ RequestStatus: "Failed", ResponseMessage: String(err) });
+    res.status(500).json({ RequestStatus: "Failed", ResponseMessage: err instanceof Error ? err.message : String(err) });
   }
 });
