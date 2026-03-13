@@ -106,7 +106,11 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
           .filter((f: any) => f.fieldIsOptional === "0")
           .map((f: any) => ({
             fieldID: String(f.fieldID),
-            fieldValue: confirmationValue,
+            // Image fields require an HTTPS URL — use a placeholder so listing
+            // can be created; seller uploads the real screenshot via AT platform
+            fieldValue: f.fieldType === "image"
+              ? "https://placehold.co/600x400.png"
+              : confirmationValue,
           }));
       } catch {
         // If category fetch fails, proceed without

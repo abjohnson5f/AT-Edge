@@ -219,6 +219,21 @@ export function Import() {
       return;
     }
 
+    // Validate required fields before hitting the AT API
+    const missing: string[] = [];
+    if (!parsedData.firstName?.trim()) missing.push("First Name");
+    if (!parsedData.lastName?.trim()) missing.push("Last Name");
+    if (!parsedData.email?.trim()) missing.push("Email");
+    if (!parsedData.phone?.trim()) missing.push("Phone");
+    if (missing.length > 0) {
+      toast({
+        title: "Required fields missing",
+        description: `Please fill in: ${missing.join(", ")}`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const result = await apiPost<any>(`/location/${parsedData.locationMatch.alias}/listing`, {
         inventoryTypeID: parsedData.inventoryTypeID,
@@ -571,20 +586,24 @@ function ListingPanel({ parsedData, onCreateListing, onDismiss, showDismiss = tr
 
         <div className="import-fields">
           <div className="import-field">
-            <label>First Name</label>
-            <input type="text" defaultValue={parsedData.firstName} onChange={e => parsedData.firstName = e.target.value} className="import-input" />
+            <label>First Name <span className="import-required">*</span></label>
+            <input type="text" defaultValue={parsedData.firstName} onChange={e => parsedData.firstName = e.target.value} className="import-input" placeholder="Required" />
           </div>
           <div className="import-field">
-            <label>Last Name</label>
-            <input type="text" defaultValue={parsedData.lastName} onChange={e => parsedData.lastName = e.target.value} className="import-input" />
+            <label>Last Name <span className="import-required">*</span></label>
+            <input type="text" defaultValue={parsedData.lastName} onChange={e => parsedData.lastName = e.target.value} className="import-input" placeholder="Required" />
+          </div>
+          <div className="import-field">
+            <label>Email <span className="import-required">*</span></label>
+            <input type="email" defaultValue={parsedData.email} onChange={e => parsedData.email = e.target.value} className="import-input" placeholder="Required" />
+          </div>
+          <div className="import-field">
+            <label>Phone <span className="import-required">*</span></label>
+            <input type="tel" defaultValue={parsedData.phone} onChange={e => parsedData.phone = e.target.value} className="import-input" placeholder="+1 555-123-4567 (Required)" />
           </div>
           <div className="import-field">
             <label>Conf Number</label>
-            <input type="text" defaultValue={parsedData.confirmationNumber} className="import-input mono" />
-          </div>
-          <div className="import-field">
-            <label>Phone</label>
-            <input type="text" defaultValue={parsedData.phone} onChange={e => parsedData.phone = e.target.value} className="import-input" />
+            <input type="text" defaultValue={parsedData.confirmationNumber} onChange={e => parsedData.confirmationNumber = e.target.value} className="import-input mono" />
           </div>
         </div>
 
