@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { X, CheckCircle2, AlertTriangle, Loader } from 'lucide-react';
 import type { Restaurant } from './DashboardShell';
 
-const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 interface InventoryType {
   inventoryTypeID: number;

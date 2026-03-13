@@ -1,7 +1,8 @@
 import { ATResponse } from "../types";
 
 // In production, API is same-origin (served by Express); in dev, Vite proxies to :3001
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
+// Use || not ?? so an empty VITE_API_URL falls back to '/api' correctly
+const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 async function handleResponse<T>(res: Response): Promise<T> {
   if (res.status === 401) {
