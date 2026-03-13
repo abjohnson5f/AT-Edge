@@ -143,6 +143,25 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
 
     res.json({ ...result, executedLive: execute });
   } catch (err) {
-    res.status(500).json({ RequestStatus: "Failed", ResponseMessage: err instanceof Error ? err.message : String(err) });
+    const raw = err instanceof Error ? err.message : String(err);
+
+    // Produce a human-readable message for known AT rejection types
+    let friendly = raw;
+    try {
+      // Extract JSON payload from ATAPIError message: "[AT-403] endpoint: {json}"
+      const jsonStart = raw.indexOf("{");
+      if (jsonStart !== -1) {
+        const obj = JSON.parse(raw.slice(jsonStart));
+        if (obj.BadListingParameters?.locationAlias) {
+          friendly = `This restaurant cannot be listed: ${obj.BadListingParameters.locationAlias}`;
+        } else if (obj.FaultyFieldIDValueListItems?.ImageURL_UnsupportedFileType) {
+          friendly = "Screenshot image type not accepted by AT. Please upload a JPEG or PNG.";
+        } else if (obj.FaultyFieldIDValueListItems?.NonOptionalFieldsMissing) {
+          friendly = "Required listing fields are missing. Please fill in all required fields.";
+        }
+      }
+    } catch { /* keep raw message */ }
+
+    res.status(500).json({ RequestStatus: "Failed", ResponseMessage: friendly });
   }
 });

@@ -41,7 +41,12 @@ uploadRoutes.post("/screenshot", async (req, res) => {
     );
 
     const baseUrl = process.env.BASE_URL || "http://localhost:3001";
-    const url = `${baseUrl}/api/upload/screenshot/${row!.id}`;
+    // Include file extension so AT platform can detect the image type from the URL
+    const ext = contentType === "image/png" ? ".png"
+      : contentType === "image/webp" ? ".webp"
+      : contentType === "image/gif" ? ".gif"
+      : ".jpg";
+    const url = `${baseUrl}/api/upload/screenshot/${row!.id}${ext}`;
 
     res.json({ RequestStatus: "Succeeded", Payload: { url, id: row!.id } });
   } catch (err) {
@@ -49,7 +54,7 @@ uploadRoutes.post("/screenshot", async (req, res) => {
   }
 });
 
-// GET /api/upload/screenshot/:id
+// GET /api/upload/screenshot/:id  (also handles :id.jpg, :id.png, etc.)
 // Returns the image with the correct Content-Type header.
 // This route must be PUBLIC (no auth) so the AT platform can fetch the image.
 uploadRoutes.get("/screenshot/:id", async (req, res) => {
@@ -58,9 +63,12 @@ uploadRoutes.get("/screenshot/:id", async (req, res) => {
   }
 
   try {
+    // Strip any file extension the client or AT platform appended to the ID
+    const rawId = req.params.id.replace(/\.[^.]+$/, "");
+
     const row = await queryOne<{ content_type: string; data: string }>(
       "SELECT content_type, data FROM screenshot_uploads WHERE id = $1",
-      [req.params.id]
+      [rawId]
     );
 
     if (!row) {

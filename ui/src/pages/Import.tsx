@@ -11,6 +11,41 @@ const INVENTORY_TYPE_LABELS: Record<number, string> = {
   2: "Reservation",
 };
 
+// ── Module-level component (not inside Import) so React doesn't remount on every render ──
+function ScannerStatusBar({ status }: { status: ScannerStatus | null }) {
+  if (!status) return null;
+  const { configured, idleConnected, scanInProgress, lastScanTime, consecutiveIdleFailures } = status;
+
+  if (!configured) {
+    return (
+      <div className="import-scanner-bar unconfigured">
+        <WifiOff size={12} />
+        <span>Email scanner not configured — set <code>GMAIL_USER</code> + <code>GMAIL_APP_PASSWORD</code></span>
+      </div>
+    );
+  }
+
+  const lastScan = new Date(lastScanTime);
+  const minutesAgo = Math.floor((Date.now() - lastScan.getTime()) / 60_000);
+  const lastScanLabel = minutesAgo < 1 ? "just now" : minutesAgo < 60 ? `${minutesAgo}m ago` : `${Math.floor(minutesAgo / 60)}h ago`;
+
+  return (
+    <div className={`import-scanner-bar ${idleConnected ? "connected" : consecutiveIdleFailures > 3 ? "degraded" : "connecting"}`}>
+      {idleConnected
+        ? <><Zap size={12} /><span>Live IDLE — inbox watched in real-time</span></>
+        : consecutiveIdleFailures > 3
+        ? <><WifiOff size={12} /><span>IDLE unavailable — polling every 15 min</span></>
+        : <><Wifi size={12} /><span>Connecting to Gmail...</span></>
+      }
+      <span className="import-scanner-divider">·</span>
+      {scanInProgress
+        ? <><RefreshCw size={11} className="spinning" /><span>Scanning...</span></>
+        : <><Clock size={11} /><span>Last scan {lastScanLabel}</span></>
+      }
+    </div>
+  );
+}
+
 interface QueueItem {
   id: number;
   email_subject: string;
@@ -274,41 +309,7 @@ export function Import() {
     }
   };
 
-  // ── Render helpers ──
-
-  const ScannerStatusBar = () => {
-    if (!scannerStatus) return null;
-    const { configured, idleConnected, scanInProgress, lastScanTime, consecutiveIdleFailures } = scannerStatus;
-
-    if (!configured) {
-      return (
-        <div className="import-scanner-bar unconfigured">
-          <WifiOff size={12} />
-          <span>Email scanner not configured — set <code>GMAIL_USER</code> + <code>GMAIL_APP_PASSWORD</code></span>
-        </div>
-      );
-    }
-
-    const lastScan = new Date(lastScanTime);
-    const minutesAgo = Math.floor((Date.now() - lastScan.getTime()) / 60_000);
-    const lastScanLabel = minutesAgo < 1 ? "just now" : minutesAgo < 60 ? `${minutesAgo}m ago` : `${Math.floor(minutesAgo / 60)}h ago`;
-
-    return (
-      <div className={`import-scanner-bar ${idleConnected ? "connected" : consecutiveIdleFailures > 3 ? "degraded" : "connecting"}`}>
-        {idleConnected
-          ? <><Zap size={12} /><span>Live IDLE — inbox watched in real-time</span></>
-          : consecutiveIdleFailures > 3
-          ? <><WifiOff size={12} /><span>IDLE unavailable — polling every 15 min</span></>
-          : <><Wifi size={12} /><span>Connecting to Gmail...</span></>
-        }
-        <span className="import-scanner-divider">·</span>
-        {scanInProgress
-          ? <><RefreshCw size={11} className="spinning" /><span>Scanning...</span></>
-          : <><Clock size={11} /><span>Last scan {lastScanLabel}</span></>
-        }
-      </div>
-    );
-  };
+  // ScannerStatusBar is defined at module level (below) to avoid remounting on every render
 
   return (
     <div className="page-container">
@@ -318,7 +319,7 @@ export function Import() {
       </div>
 
       {/* Scanner status bar */}
-      <ScannerStatusBar />
+      <ScannerStatusBar status={scannerStatus} />
 
       {/* Tabs */}
       <div className="scout-tabs">
