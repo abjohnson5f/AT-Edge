@@ -26,8 +26,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { error: Error | 
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,
-      refetchInterval: 60_000,
+      staleTime: 5 * 60_000,    // data is fresh for 5 min
+      refetchInterval: false,    // no automatic background refetch (prevents flicker)
+      refetchOnWindowFocus: false,
     },
   },
 });

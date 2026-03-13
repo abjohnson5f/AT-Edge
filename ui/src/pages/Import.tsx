@@ -78,11 +78,12 @@ export function Import() {
     loadScannerStatus();
     loadQueue();
 
-    // Poll scanner status every 15s
+    // Background refresh every 2 min — IMAP IDLE handles real-time detection,
+    // this just keeps the status bar and queue count current
     const interval = setInterval(() => {
       loadScannerStatus();
       if (activeTab === "auto") loadQueue();
-    }, 15_000);
+    }, 2 * 60_000);
     return () => clearInterval(interval);
   }, [loadScannerStatus, loadQueue, activeTab]);
 
@@ -244,6 +245,8 @@ export function Import() {
         lastName: parsedData.lastName,
         emailAddress: parsedData.email,
         phoneNumber: parsedData.phone,
+        confirmationNumber: parsedData.confirmationNumber,
+        screenshotUrl: parsedData.screenshotUrl ?? "",
         locationCategoryFieldIDValueList: [],
         execute: !isDryRun,
       });
@@ -604,6 +607,10 @@ function ListingPanel({ parsedData, onCreateListing, onDismiss, showDismiss = tr
           <div className="import-field">
             <label>Conf Number</label>
             <input type="text" defaultValue={parsedData.confirmationNumber} onChange={e => parsedData.confirmationNumber = e.target.value} className="import-input mono" />
+          </div>
+          <div className="import-field import-field--full">
+            <label>Screenshot URL <span style={{color: 'var(--color-text-muted)', fontWeight: 400, fontSize: 'var(--text-xs)'}}>(HTTPS image link — AT requires this)</span></label>
+            <input type="url" defaultValue={parsedData.screenshotUrl ?? ""} onChange={e => parsedData.screenshotUrl = e.target.value} className="import-input" placeholder="https://... (paste a link to your confirmation screenshot)" />
           </div>
         </div>
 

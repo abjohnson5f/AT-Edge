@@ -102,15 +102,16 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
           ? `Confirmation #${req.body.confirmationNumber}`
           : "Confirmation on file — screenshot to be uploaded via AT platform";
 
+        // Use caller-supplied screenshot URL if provided, otherwise placeholder
+        const screenshotUrl = req.body.screenshotUrl?.startsWith("https://")
+          ? req.body.screenshotUrl
+          : "https://placehold.co/600x400.png";
+
         categoryFields = fields
           .filter((f: any) => f.fieldIsOptional === "0")
           .map((f: any) => ({
             fieldID: String(f.fieldID),
-            // Image fields require an HTTPS URL — use a placeholder so listing
-            // can be created; seller uploads the real screenshot via AT platform
-            fieldValue: f.fieldType === "image"
-              ? "https://placehold.co/600x400.png"
-              : confirmationValue,
+            fieldValue: f.fieldType === "image" ? screenshotUrl : confirmationValue,
           }));
       } catch {
         // If category fetch fails, proceed without
