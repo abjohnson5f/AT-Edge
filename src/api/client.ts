@@ -37,11 +37,11 @@ export class ATClient {
     const data = (await response.json()) as ATResponse<T>;
 
     if (data.RequestStatus === "Failed") {
-      throw new ATAPIError(
-        data.ResponseMessage,
-        data.ResponseCode,
-        endpoint
-      );
+      // ResponseMessage may be an object — serialize it so the error is readable
+      const msg = typeof data.ResponseMessage === "string"
+        ? data.ResponseMessage
+        : JSON.stringify(data.ResponseMessage);
+      throw new ATAPIError(msg, data.ResponseCode, endpoint);
     }
 
     return data;

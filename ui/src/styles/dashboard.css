@@ -3403,6 +3403,12 @@ body {
 }
 .import-queue-dismiss:hover { color: var(--color-red); background: rgba(239, 68, 68, 0.1); }
 
+.import-listing-column {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
 .import-match-actions {
   display: flex;
   gap: var(--space-2);

@@ -250,7 +250,8 @@ export function Import() {
         await loadQueue();
       }
     } catch (err) {
-      toast({ title: "Listing creation failed", description: String(err), variant: "destructive" });
+      const msg = err instanceof Error ? err.message : String(err);
+      toast({ title: "Listing creation failed", description: msg, variant: "destructive" });
     }
   };
 
@@ -545,7 +546,7 @@ interface ListingPanelProps {
 
 function ListingPanel({ parsedData, onCreateListing, onDismiss, showDismiss = true }: ListingPanelProps) {
   return (
-    <>
+    <div className="import-listing-column">
       {/* Restaurant match card */}
       <div className="import-panel import-match-panel">
         <div className="import-match-header">
@@ -633,6 +634,6 @@ function ListingPanel({ parsedData, onCreateListing, onDismiss, showDismiss = tr
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
