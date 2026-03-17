@@ -105,7 +105,7 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
         // Use caller-supplied screenshot URL if provided, otherwise placeholder
         const screenshotUrl = req.body.screenshotUrl?.startsWith("https://")
           ? req.body.screenshotUrl
-          : "https://placehold.co/600x400.png";
+          : "https://placehold.co/600x400.jpg";
 
         categoryFields = fields
           .filter((f: any) => f.fieldIsOptional === "0")
