@@ -3507,6 +3507,11 @@ body {
 }
 
 /* Auto badge */
+.import-badge.past {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--color-red);
+}
+
 .import-badge.auto {
   background: rgba(84, 124, 129, 0.15);
   color: var(--color-primary);

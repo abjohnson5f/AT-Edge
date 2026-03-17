@@ -426,6 +426,14 @@ export function Import() {
                               <Zap size={9} /> Auto
                             </span>
                           )}
+                          {(() => {
+                            const pd = item.parsed_data?.parsed ?? item.parsed_data;
+                            const date = pd?.date;
+                            if (date && new Date(date + "T23:59:59") < new Date()) {
+                              return <span className="import-badge past">PAST</span>;
+                            }
+                            return null;
+                          })()}
                         </div>
                       </div>
                       <div className="import-queue-row-right">
