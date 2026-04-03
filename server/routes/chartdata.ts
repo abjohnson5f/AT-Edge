@@ -103,26 +103,33 @@ chartdataRoutes.get("/:alias", async (req, res) => {
     const closes = candles.map(c => ({ time: c.time, value: c.close }));
     const sma = calculateSMA(closes, 20);
 
-    // 3. Conversion rate time series — one row per day (latest snapshot wins)
-    const convSnapshots = await queryMany<SnapshotRow>(
-      `SELECT DISTINCT ON (DATE(captured_at)) captured_at::text, data
+    // 3. Conversion rate — derived from price_curve snapshots for this location.
+    // price_curve stores {prices:[{date, avg, low, high, count}], locationAlias, ...}
+    // We use the daily average price as a proxy for demand/conversion strength.
+    interface PriceCurveRow {
+      captured_at: string;
+      data: { prices?: Array<{ date: string; avg: number; count: number }>; locationAlias?: string };
+    }
+    const priceCurveSnapshots = await queryMany<PriceCurveRow>(
+      `SELECT captured_at::text, data
        FROM market_snapshots
-       WHERE snapshot_type = 'conversion_rates'
-         AND captured_at >= CURRENT_DATE - $1::integer
-       ORDER BY DATE(captured_at) ASC, captured_at DESC`,
-      [days],
+       WHERE snapshot_type = 'price_curve'
+         AND data->>'locationAlias' = $1
+         AND captured_at >= CURRENT_DATE - $2::integer
+       ORDER BY captured_at ASC`,
+      [alias, days],
     );
 
-    const conversion = convSnapshots
-      .map(s => {
-        const val = s.data?.locations?.[alias];
-        if (val == null) return null;
-        return {
-          time: s.captured_at.slice(0, 10),
-          value: val,
-        };
-      })
-      .filter(Boolean);
+    // Build a date→avgPrice map, taking the most recent snapshot per calendar day
+    const convByDate = new Map<string, number>();
+    for (const snap of priceCurveSnapshots) {
+      for (const entry of snap.data?.prices ?? []) {
+        if (entry.avg > 0) convByDate.set(entry.date, entry.avg / 100); // cents → dollars
+      }
+    }
+    const conversion = [...convByDate.entries()]
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([time, value]) => ({ time, value }));
 
     // 4. Demand index time series — one row per day (latest snapshot wins)
     const demandSnapshots = await queryMany<SnapshotRow>(

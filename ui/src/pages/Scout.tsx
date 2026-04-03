@@ -58,7 +58,7 @@ const TABS: TabDef[] = [
     label: "Highest Converting",
     icon: TrendingUp,
     dataKey: "highestConverting",
-    emptyMsg: "No conversion data available",
+    emptyMsg: "Highest Converting data is not available for this account tier — AppointmentTrader restricts this endpoint to higher-tier accounts. The other 4 tabs use different endpoints that work with your account.",
     columns: [
       { label: "Restaurant", render: (item) => <RestaurantCell item={item} /> },
       { label: "Conv. Rate", align: "right", render: (item) => (

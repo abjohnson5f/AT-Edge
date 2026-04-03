@@ -79,10 +79,11 @@ function parseRankings(items: Array<Record<string, string | number>>): LocationR
       locationName: nameFromAlias(alias),
       city: extractCityFromAlias(alias),
       score: parseInt(String(item.GlobalATRank ?? item.score ?? idx + 1), 10),
-      bidCount: parseInt(String(item["30DayNumberBids"] ?? item.bidCount ?? "0"), 10),
-      listingCount: parseInt(String(item["30DayNumberListings"] ?? item.listingCount ?? "0"), 10),
-      viewCount: parseInt(String(item["30DayATPageViews"] ?? item.viewCount ?? "0"), 10),
-      conversionRate: parseFloat(String(item["30DayConversionRate"] ?? item.conversionRate ?? "0")),
+      // AT API returns "30dayNumberBids" (lowercase d) for some endpoints, "30DayNumberBids" for others
+      bidCount: parseInt(String(item["30DayNumberBids"] ?? item["30dayNumberBids"] ?? item.bidCount ?? "0"), 10),
+      listingCount: parseInt(String(item["30DayNumberListings"] ?? item["30dayNumberListings"] ?? item.listingCount ?? "0"), 10),
+      viewCount: parseInt(String(item["30DayATPageViews"] ?? item["30dayATPageViews"] ?? item.viewCount ?? "0"), 10),
+      conversionRate: parseFloat(String(item["30DayConversionRate"] ?? item["30dayConversionRate"] ?? item.conversionRate ?? "0")),
     };
   }).filter(r => r.locationAlias);
 }
