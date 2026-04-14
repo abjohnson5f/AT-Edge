@@ -310,6 +310,39 @@ LEFT JOIN location_facts lf ON lf.location_id = loc.id AND lf.status = 'active'
 GROUP BY loc.id, loc.alias, loc.name, loc.summary, loc.access_count;
 
 -- ============================================================
+-- NOTIFICATION SYSTEM
+-- Portfolio monitoring, deadline warnings, and Telegram alerts.
+-- ============================================================
+
+-- Snapshot of last-seen portfolio state for change detection
+CREATE TABLE IF NOT EXISTS listing_snapshots (
+  listing_id    TEXT PRIMARY KEY,
+  status        TEXT,
+  price_cents   INTEGER,
+  popularity    INTEGER,
+  raw_data      JSONB,
+  last_seen_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Per-listing cancellation deadline config
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS
+  cancel_warn_hours INTEGER NOT NULL DEFAULT 72;
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS
+  cancel_urgent_hours INTEGER NOT NULL DEFAULT 24;
+
+-- Notification log for dedup and audit
+CREATE TABLE IF NOT EXISTS notification_log (
+  id          SERIAL PRIMARY KEY,
+  listing_id  TEXT,
+  event_type  TEXT NOT NULL,
+  message     TEXT NOT NULL,
+  sent_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  channel     TEXT NOT NULL DEFAULT 'telegram'
+);
+
+CREATE INDEX IF NOT EXISTS idx_notif_listing ON notification_log(listing_id, event_type);
+
+-- ============================================================
 -- DECAY MANAGEMENT FUNCTION
 -- Run nightly to update decay tiers
 -- ============================================================

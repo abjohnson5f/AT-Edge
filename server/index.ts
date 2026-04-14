@@ -19,6 +19,8 @@ import { hasDatabase, runMigration } from "./db/index.js";
 import { runCollection } from "./collector.js";
 import { setupAuth, requireAuth, isAuthEnabled } from "./auth.js";
 import { startEmailScanner, stopEmailScanner } from "./email-scanner.js";
+import { startPortfolioMonitor, stopPortfolioMonitor } from "./portfolio-monitor.js";
+import { isNotifierConfigured } from "./notifier.js";
 import { isImapConfigured } from "../src/email/gmail.js";
 
 dotenv.config();
@@ -151,6 +153,7 @@ function startPeriodicCollection() {
 function shutdown() {
   console.log("\n  Shutting down...");
   stopEmailScanner();
+  stopPortfolioMonitor();
   if (collectionTimer) clearInterval(collectionTimer);
   process.exit(0);
 }
@@ -166,9 +169,11 @@ app.listen(PORT, async () => {
   console.log(`  Claude: ${process.env.ANTHROPIC_API_KEY ? "configured" : "MISSING"}`);
   console.log(`  Apify: ${process.env.APIFY_API_TOKEN ? "configured" : "NOT SET (restaurant enrichment limited)"}`);
   console.log(`  Gmail: ${isImapConfigured() ? `IMAP (${process.env.GMAIL_USER})` : "NOT CONFIGURED (set GMAIL_USER + GMAIL_APP_PASSWORD)"}`);
+  console.log(`  Telegram: ${isNotifierConfigured() ? "configured" : "NOT CONFIGURED (set TELEGRAM_BOT_TOKEN + TELEGRAM_CHAT_ID)"}`);
 
   await initDatabase();
   startPeriodicCollection();
-  startEmailScanner(); // starts IMAP IDLE watcher + processing loop
+  startEmailScanner();
+  startPortfolioMonitor();
   console.log("");
 });

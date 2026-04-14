@@ -128,7 +128,7 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
     if (hasDatabase()) {
       try {
         await upsertLocation(req.params.alias, req.params.alias);
-        await recordListing({
+        const listingId = await recordListing({
           locationAlias: req.params.alias,
           inventoryTypeId: req.body.inventoryTypeID,
           priceCents: req.body.priceAmountInSmallestUnit,
@@ -139,6 +139,13 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
           phone: req.body.phoneNumber,
           isDryRun: !execute,
         });
+        if (listingId && (req.body.cancelWarnHours || req.body.cancelUrgentHours)) {
+          const { query: dbQuery } = await import("../db/index.js");
+          await dbQuery(
+            `UPDATE listings SET cancel_warn_hours = $1, cancel_urgent_hours = $2 WHERE id = $3`,
+            [req.body.cancelWarnHours ?? 72, req.body.cancelUrgentHours ?? 24, listingId]
+          );
+        }
       } catch { /* DB persistence is optional */ }
     }
 

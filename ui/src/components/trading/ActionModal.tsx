@@ -43,6 +43,8 @@ export function ActionModal({ type, restaurant, onClose }: ActionModalProps) {
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [cancelWarnHours, setCancelWarnHours] = useState(72);
+  const [cancelUrgentHours, setCancelUrgentHours] = useState(24);
 
   // ── Fill Bid form state ──
   const [bidPrice, setBidPrice] = useState((restaurant.avgPriceCents * 0.85 / 100).toFixed(2));
@@ -96,6 +98,8 @@ export function ActionModal({ type, restaurant, onClose }: ActionModalProps) {
           phoneNumber: phone,
           locationCategoryFieldIDValueList: [],
           execute: !isDryRun,
+          cancelWarnHours,
+          cancelUrgentHours,
         }),
       });
 
@@ -253,6 +257,26 @@ export function ActionModal({ type, restaurant, onClose }: ActionModalProps) {
               <div className="modal-field modal-field--full">
                 <label>Phone <span className="modal-required">*</span></label>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} className="modal-input" placeholder="+1 555-123-4567" />
+              </div>
+
+              {/* Cancellation deadline warnings */}
+              <div className="modal-field">
+                <label>Warning Alert</label>
+                <select value={cancelWarnHours} onChange={e => setCancelWarnHours(Number(e.target.value))} className="modal-input" aria-label="Warning alert threshold">
+                  <option value={48}>48 hours before</option>
+                  <option value={72}>72 hours before</option>
+                  <option value={96}>4 days before</option>
+                  <option value={120}>5 days before</option>
+                  <option value={168}>7 days before</option>
+                </select>
+              </div>
+              <div className="modal-field">
+                <label>Urgent Alert</label>
+                <select value={cancelUrgentHours} onChange={e => setCancelUrgentHours(Number(e.target.value))} className="modal-input" aria-label="Urgent alert threshold">
+                  <option value={12}>12 hours before</option>
+                  <option value={24}>24 hours before</option>
+                  <option value={48}>48 hours before</option>
+                </select>
               </div>
             </div>
 
