@@ -9,8 +9,14 @@ import { useToast } from "../components/ui/use-toast";
 import { Listing } from "../types";
 
 function getDaysUntil(dateStr: string) {
-  const diff = new Date(dateStr).getTime() - Date.now();
-  return Math.ceil(diff / (1000 * 3600 * 24));
+  // Parse as local date to avoid UTC midnight rolling back a day
+  const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const target = match
+    ? new Date(+match[1], +match[2] - 1, +match[3])
+    : new Date(dateStr);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  return Math.ceil((target.getTime() - today.getTime()) / (1000 * 3600 * 24));
 }
 
 export function Portfolio() {
