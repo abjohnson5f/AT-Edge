@@ -98,7 +98,8 @@ export function Portfolio() {
     if (!showReview && !reviewData) reviewRefetch();
   };
 
-  const listings: Listing[] = Array.isArray(listingsData?.Payload) ? listingsData.Payload : [];
+  const allListings: Listing[] = Array.isArray(listingsData?.Payload) ? listingsData.Payload : [];
+  const listings = allListings.filter(l => getDaysUntil(l.dateTime) >= 0);
   const totalValue = listings.reduce((sum: number, l: Listing) => sum + (l.priceAmountInSmallestUnit || 0), 0);
   const expiring = listings.filter(l => getDaysUntil(l.dateTime) <= 2).length;
   const aiReport = reviewData?.Payload?.report || "";

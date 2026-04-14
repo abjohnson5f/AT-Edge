@@ -53,7 +53,11 @@ export function ActionModal({ type, restaurant, onClose }: ActionModalProps) {
     fetch(`${API_BASE}/location/${restaurant.alias}/inventory-types`)
       .then(r => r.json())
       .then(data => {
-        const types: InventoryType[] = data?.Payload ?? [];
+        const raw: any[] = data?.Payload?.ResponseBody?.KeyValueList ?? data?.Payload?.KeyValueList ?? [];
+        const types: InventoryType[] = raw.map((t: any) => ({
+          inventoryTypeID: parseInt(String(t.inventoryTypeID), 10),
+          inventoryTypeName: String(t.inventoryTypeName),
+        }));
         if (types.length > 0) {
           setInventoryTypes(types);
           setInventoryTypeID(types[0].inventoryTypeID);
