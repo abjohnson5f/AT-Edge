@@ -105,12 +105,13 @@ export function ActionModal({ type, restaurant, onClose }: ActionModalProps) {
         throw new Error(data.ResponseMessage ?? 'Listing creation failed');
       }
 
+      const wasLive = data.executedLive === true;
       setResult({
         success: true,
-        message: isDryRun
-          ? `Dry run passed — ${restaurant.name} on ${date} at $${priceDollars} is valid.`
-          : `Listing created for ${restaurant.name} on ${date} at $${priceDollars}!`,
-        isDryRun,
+        message: wasLive
+          ? `Listing created for ${restaurant.name} on ${date} at $${priceDollars}!`
+          : `Dry run passed — ${restaurant.name} on ${date} at $${priceDollars} is valid. Server is in DRY_RUN mode.`,
+        isDryRun: !wasLive,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));

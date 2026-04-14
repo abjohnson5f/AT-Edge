@@ -1,5 +1,6 @@
 import { Router } from "express";
 import { ATAPI } from "../../src/api/index.js";
+import { ATAPIError } from "../../src/api/client.js";
 import { hasDatabase, recordListing, upsertLocation } from "../db/index.js";
 
 export const locationRoutes = Router();
@@ -143,12 +144,39 @@ locationRoutes.post("/:alias/listing", async (req, res) => {
 
     res.json({ ...result, executedLive: execute });
   } catch (err) {
+    // AT API returns code 399 when validation passes but isWritingRequest was false.
+    // In DRY_RUN mode this is expected — treat as a successful dry run.
+    if (err instanceof ATAPIError && err.code === 399 && !execute) {
+      if (hasDatabase()) {
+        try {
+          await upsertLocation(req.params.alias, req.params.alias);
+          await recordListing({
+            locationAlias: req.params.alias,
+            inventoryTypeId: req.body.inventoryTypeID,
+            priceCents: req.body.priceAmountInSmallestUnit,
+            dateTime: req.body.dateTime,
+            firstName: req.body.firstName,
+            lastName: req.body.lastName,
+            email: req.body.emailAddress,
+            phone: req.body.phoneNumber,
+            isDryRun: true,
+          });
+        } catch { /* DB persistence is optional */ }
+      }
+      return res.json({
+        RequestStatus: "Succeeded",
+        ResponseCode: 399,
+        ResponseMessage: "Dry run passed — all fields valid. Set DRY_RUN=false to create live listings.",
+        Payload: null,
+        executedLive: false,
+      });
+    }
+
     const raw = err instanceof Error ? err.message : String(err);
 
     // Produce a human-readable message for known AT rejection types
     let friendly = raw;
     try {
-      // Extract JSON payload from ATAPIError message: "[AT-403] endpoint: {json}"
       const jsonStart = raw.indexOf("{");
       if (jsonStart !== -1) {
         const obj = JSON.parse(raw.slice(jsonStart));
